@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>中国石化长城大模型人工智能应用系统</title>
+    <link rel="stylesheet" href="./styles.css?v=20260702-aico-font-polish-2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/sinopec-logo.jpg" alt="中国石化 SINOPEC" />
+          <div class="brand-copy">
+            <div class="brand-title">中国石化长城大模型人工智能应用系统</div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="icon-btn" aria-label="帮助">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 18h.01" />
+              <path d="M9.1 9a3 3 0 1 1 4.9 2.3c-.9.7-1.4 1.2-1.4 2.2v.5" />
+              <circle cx="12" cy="12" r="10" />
+            </svg>
+          </button>
+          <div class="avatar">admin</div>
+          <span class="divider"></span>
+          <button class="link-btn">退出登录</button>
+        </div>
+      </header>
+
+      <div class="main">
+        <aside class="sidebar">
+          <button class="primary-action">+ 创建应用</button>
+
+          <nav class="menu">
+            <button class="menu-group" data-group-toggle="apps" aria-expanded="true">
+              <span class="menu-left">
+                <span class="menu-icon">
+                  <svg class="menu-svg-apps" viewBox="0 0 32 32" aria-hidden="true">
+                    <path d="M7 14.2v10.4c0 1.3 1.1 2.4 2.4 2.4h8.2" />
+                    <path d="M5.8 13 16 5l10.2 8" />
+                    <path d="M11 14h8.2" />
+                    <path d="M11 18h6.5" />
+                    <circle cx="23.5" cy="22.5" r="5" />
+                    <circle cx="23.5" cy="22.5" r="1.8" />
+                  </svg>
+                </span>
+                <span>应用集</span>
+              </span>
+              <span class="caret">⌄</span>
+            </button>
+            <div class="menu-children" data-group="apps">
+              <button class="menu-item active" data-view="templates">应用模版</button>
+              <button class="menu-item" data-view="myapps">我的应用</button>
+              <button class="menu-item" data-view="datacenter">数据中心</button>
+            </div>
+
+            <button class="menu-group" data-group-toggle="tools" aria-expanded="true">
+              <span class="menu-left">
+                <span class="menu-icon">
+                  <svg class="menu-svg-tools" viewBox="0 0 32 32" aria-hidden="true">
+                    <path d="M20.5 5.5a6.2 6.2 0 0 0-7.9 7.9L6 20v5.8h5.8l6.6-6.6a6.2 6.2 0 0 0 7.9-7.9l-5.1 5.1-4.8-4.8 5.1-5.1Z" />
+                    <path d="M17 23h9" />
+                    <path d="M17 27h9" />
+                  </svg>
+                </span>
+                <span>工具集</span>
+              </span>
+              <span class="caret">⌄</span>
+            </button>
+            <div class="menu-children" data-group="tools">
+              <button class="menu-item" data-view="workflow">工作流</button>
+              <button class="menu-item" data-view="skills">技能</button>
+              <button class="menu-item" data-view="mcp">MCP</button>
+              <button class="menu-item" data-view="api">API</button>
+            </div>
+
+            <button class="menu-group" data-group-toggle="evaluation" aria-expanded="true">
+              <span class="menu-left">
+                <span class="menu-icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 4v16" />
+                    <path d="M9 14V8" />
+                    <path d="M14 14V6" />
+                    <path d="M19 14v-4" />
+                  </svg>
+                </span>
+                <span>评测</span>
+              </span>
+              <span class="caret">⌄</span>
+            </button>
+            <div class="menu-children" data-group="evaluation">
+              <button class="menu-item" data-view="eval-tasks">评测任务</button>
+              <button class="menu-item" data-view="eval-sets">评测集</button>
+              <button class="menu-item" data-view="evaluators">评估器</button>
+            </div>
+
+            <button class="menu-item menu-item-root" data-view="api-management">
+              <span class="menu-icon">
+                <svg class="menu-svg-api-management" viewBox="0 0 32 32" aria-hidden="true">
+                  <circle cx="19.5" cy="9.5" r="5.5" />
+                  <path d="M15.6 13.4 7 22" />
+                  <path d="M7 22v5" />
+                  <path d="M7 22h5" />
+                  <path d="M10.3 18.7 14 22.4" />
+                </svg>
+              </span>
+              <span>API管理</span>
+            </button>
+
+            <button class="menu-item menu-item-root" data-view="monitoring">
+              <span class="menu-icon">
+                <svg class="menu-svg-monitoring" viewBox="0 0 32 32" aria-hidden="true">
+                  <path d="M6 25h20" />
+                  <path d="M9 21V12" />
+                  <path d="M15.5 21V7" />
+                  <path d="M22 21v-6" />
+                  <path d="M7.5 8.5h4" />
+                  <path d="M19.8 9.5h4.7v4.7" />
+                  <path d="M9.5 17.5 15.5 12l4.1 3.3 4.6-5.2" />
+                </svg>
+              </span>
+              <span>数据监控</span>
+            </button>
+
+            <button class="menu-item menu-item-root" data-view="db">
+              <span class="menu-icon">
+                <svg class="menu-svg-db" viewBox="0 0 32 32" aria-hidden="true">
+                  <ellipse cx="16" cy="8" rx="10.5" ry="4.5" />
+                  <path d="M5.5 8v16c0 2.5 4.7 4.5 10.5 4.5S26.5 26.5 26.5 24V8" />
+                  <path d="M5.5 13.5c0 2.5 4.7 4.5 10.5 4.5s10.5-2 10.5-4.5" />
+                  <path d="M5.5 19c0 2.5 4.7 4.5 10.5 4.5s10.5-2 10.5-4.5" />
+                </svg>
+              </span>
+              <span>数据库</span>
+            </button>
+            <button class="menu-item menu-item-root" data-view="kb">
+              <span class="menu-icon">
+                <svg class="menu-svg-kb" viewBox="0 0 32 32" aria-hidden="true">
+                  <rect x="7" y="5" width="18" height="22" rx="3" />
+                  <path d="M12 5v22" />
+                  <path d="M19 5v8l2.2-1.7L23.4 13V5" />
+                  <path d="M12 10h-2" />
+                  <path d="M12 16h-2" />
+                  <path d="M12 22h-2" />
+                </svg>
+              </span>
+              <span>智能体知识库</span>
+            </button>
+          </nav>
+
+          <button class="collapse-btn" data-sidebar-toggle aria-label="收起侧边栏" title="收起侧边栏">‹</button>
+        </aside>
+
+        <main class="content">
+          <section class="view" data-panel="templates">
+            <div class="page-head">
+              <label class="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="M20 20l-3.8-3.8"></path>
+                </svg>
+                <input type="text" placeholder="搜索应用" />
+              </label>
+            </div>
+
+            <h2 class="section-title">官方推荐模板</h2>
+            <div class="card-grid">
+              <article class="app-card featured">
+                <div class="app-icon photo">
+                  <span>◐</span>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">文档解读助手</div>
+                  <p>选择知识库文件或上传本地文件，可针对文档内容进行问题解答，迎接更智能、更直观的文档处理。</p>
+                  <div class="app-tags"><span class="app-tag hot">文档问答</span><span class="app-tag">知识库</span><span class="app-tag">文件解析</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">成品油月度采购计划生...</div>
+                  <p>团队赛第二题 工具配置下包含每一部分的子工作流。</p>
+                  <div class="app-tags"><span class="app-tag hot">采购计划</span><span class="app-tag">工作流</span><span class="app-tag">表单生成</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">消防救援任务应急处置...</div>
+                  <p>面向消防救援现场的任务拆解、物资调度、风险提示和应急处置建议生成。</p>
+                  <div class="app-tags"><span class="app-tag hot">应急处置</span><span class="app-tag">安全生产</span><span class="app-tag">多轮问答</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">油品销售信息查询及入...</div>
+                  <p>支持按区域、时间和品类查询油品销售数据，自动汇总关键指标和异常波动。</p>
+                  <div class="app-tags"><span class="app-tag">销售查询</span><span class="app-tag">经营分析</span><span class="app-tag">报表摘要</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">安全行为智能分析助手</div>
+                  <p>结合现场作业规范识别不安全行为，输出风险等级、整改建议和复核清单。</p>
+                  <div class="app-tags"><span class="app-tag hot">行为分析</span><span class="app-tag">图文识别</span><span class="app-tag">隐患治理</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">差旅交通方式查询助手</div>
+                  <p>根据出发地、目的地、预算和时效要求，推荐合规差旅交通方案。</p>
+                  <div class="app-tags"><span class="app-tag">差旅助手</span><span class="app-tag">规则匹配</span><span class="app-tag">费用测算</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">设备巡检报告生成助手</div>
+                  <p>根据巡检记录、缺陷照片和设备台账，自动生成规范化巡检报告。</p>
+                  <div class="app-tags"><span class="app-tag hot">巡检报告</span><span class="app-tag">设备台账</span><span class="app-tag">图片摘要</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">合同条款风险审查助手</div>
+                  <p>识别合同文本中的付款、违约、保密和交付风险，输出审查意见。</p>
+                  <div class="app-tags"><span class="app-tag">合同审查</span><span class="app-tag">风险识别</span><span class="app-tag">法务支持</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <div class="app-meta">
+                  <div class="app-title">生产日报智能汇总助手</div>
+                  <p>汇总装置运行、产量、能耗和异常事件，生成面向管理层的日报摘要。</p>
+                  <div class="app-tags"><span class="app-tag hot">生产日报</span><span class="app-tag">指标汇总</span><span class="app-tag">异常说明</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+            </div>
+          </section>
+
+          <section class="view hidden" data-panel="myapps">
+            <div class="page-head app-page-tools">
+              <label class="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="M20 20l-3.8-3.8"></path>
+                </svg>
+                <input type="text" placeholder="搜索应用" />
+              </label>
+            </div>
+
+            <div class="toolbar">
+              <button class="filter active">全部状态</button>
+            </div>
+
+            <div class="card-grid">
+              <article class="app-card selected">
+                <div class="app-icon badge">
+                  <span>🧾</span>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">自动识别发票生成领用单</div>
+                  <p>通过AI+OCR的方式自动识别发票中领用单的关键信息。</p>
+                  <div class="app-stats"><span class="app-stat online">运行中</span><span class="app-stat">今日 128 次</span><span class="app-stat">更新 06-28</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">xxzhushou</div>
+                  <p>用于常见制度查询、会议纪要整理和日常问题答复的通用智能助手。</p>
+                  <div class="app-stats"><span class="app-stat online">运行中</span><span class="app-stat">今日 64 次</span><span class="app-stat">知识库 3 个</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card selected">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">mem_test</div>
+                  <p>测试长短期记忆能力，记录用户偏好、历史问答和上下文追踪效果。</p>
+                  <div class="app-stats"><span class="app-stat draft">调试中</span><span class="app-stat">会话 21 条</span><span class="app-stat">更新 06-26</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">数数</div>
+                  <p>用于测试多轮计数、结构化输出和工具调用链路，辅助验证基础能力。</p>
+                  <div class="app-stats"><span class="app-stat draft">测试中</span><span class="app-stat">调用 312 次</span><span class="app-stat">版本 v0.3</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card selected">
+                <div class="app-icon photo">
+                  <span>◐</span>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">文档解读助手副本185</div>
+                  <p>选择知识库文件或上传本地文件，可针对文档内容进行问题解答，迎接更智能、更直观的文档...</p>
+                  <div class="app-stats"><span class="app-stat online">运行中</span><span class="app-stat">文件 46 份</span><span class="app-stat">命中率 87%</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+
+              <article class="app-card">
+                <div class="app-icon">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" opacity=".2"></circle>
+                    <circle cx="24" cy="19" r="7" fill="white"></circle>
+                    <path d="M12 37c2.2-7 6.8-10 12-10s9.8 3 12 10" fill="white"></path>
+                  </svg>
+                </div>
+                <button class="more">···</button>
+                <div class="app-meta">
+                  <div class="app-title">qqqqqqqqqqqqqqqqqq...</div>
+                  <p>qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq...</p>
+                  <div class="app-stats"><span class="app-stat idle">未发布</span><span class="app-stat">草稿</span><span class="app-stat">更新 06-18</span></div>
+                </div>
+                <div class="creator">创建者：admin</div>
+              </article>
+            </div>
+          </section>
+
+          <section class="view hidden" data-panel="db">
+            <div class="db-shell" data-db-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="datacenter">
+            <div class="data-center-shell">
+              <div class="data-center-tabs">
+                <button class="dc-tab active" data-dc-tab="chat">对话记录</button>
+                <button class="dc-tab" data-dc-tab="feedback">用户反馈</button>
+                <button class="dc-tab" data-dc-tab="rating">点赞点踩</button>
+              </div>
+
+              <div class="data-center-toolbar" data-dc-toolbar></div>
+
+              <div class="dc-table-wrap">
+                <table class="dc-table" data-dc-table></table>
+              </div>
+
+              <div class="dc-footer" data-dc-footer></div>
+            </div>
+          </section>
+
+          <section class="view hidden" data-panel="api">
+            <div class="api-service-shell" data-api-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="workflow">
+            <div class="workflow-shell" data-workflow-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="skills">
+            <div class="mg-skill-page">
+              <div class="mg-layout">
+                <main class="mg-skill-content">
+                  <div class="mg-path-row">
+                    <span>工具集</span>
+                    <span>/</span>
+                    <strong>技能</strong>
+                  </div>
+
+                  <section class="mg-skill-board" data-mg-skill-board>
+                    <div class="mg-center-tabs">
+                      <button class="active" data-mg-skill-tab="center">技能中心</button>
+                      <button data-mg-skill-tab="mine">我的技能</button>
+                    </div>
+                    <div class="mg-filter-row" data-mg-filter-row></div>
+                    <div class="mg-skill-list" data-mg-skill-list></div>
+                    <div class="mg-skill-footer" data-mg-skill-footer></div>
+                  </section>
+                </main>
+              </div>
+              <div class="mg-toast hidden" data-mg-toast></div>
+            </div>
+          </section>
+
+          <section class="view hidden" data-panel="mcp">
+            <div class="mcp-shell" data-mcp-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="kb">
+            <div class="kb-shell" data-kb-root></div>
+            <div class="kb-toast hidden" data-kb-toast></div>
+          </section>
+
+          <section class="view hidden" data-panel="evaluation">
+            <div class="eval-shell" data-eval-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="api-management">
+            <div class="api-key-shell" data-api-key-root></div>
+          </section>
+
+          <section class="view hidden" data-panel="monitoring">
+            <div class="monitor-shell" data-monitor-root></div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="./app.js?v=20260702-aico-font-polish-2"></script>
+  </body>
+</html>
