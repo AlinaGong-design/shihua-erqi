@@ -236,14 +236,15 @@ function renderAgentModule() {
 
 function renderAgentTable(rows) {
   const headers = agentState.tab === "center"
-    ? ["名称", "类型", "简介", "创建人", "所属部门", "分享时间", "操作"]
+    ? ["名称", "类型", "简介", "创建人", "所属部门", "分享时间"]
     : ["名称", "类型", "简介", "创建人", "所属部门", "创建时间", "操作"];
+  const colspan = agentState.tab === "center" ? 6 : 7;
   return `
     <div class="agent-table-wrap">
       <table class="agent-table">
         <thead><tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead>
         <tbody>
-          ${rows.map(renderAgentRow).join("") || `<tr><td class="agent-empty" colspan="7">暂无数据</td></tr>`}
+          ${rows.map(renderAgentRow).join("") || `<tr><td class="agent-empty" colspan="${colspan}">暂无数据</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -260,8 +261,18 @@ function renderAgentRow(item) {
       <td>${escapeHtml(item.owner)}</td>
       <td>${escapeHtml(item.department)}</td>
       <td>${escapeHtml(time)}</td>
-      <td class="agent-actions">${renderAgentActions(item)}</td>
+      ${agentState.tab === "center" ? "" : `<td class="agent-actions">${renderAgentTableActions(item)}</td>`}
     </tr>
+  `;
+}
+
+function renderAgentTableActions(item) {
+  if (agentState.tab === "center") return "";
+  return `
+    <div class="agent-table-more-wrap">
+      <button class="agent-table-more" data-agent-action="toggle-menu" data-agent-id="${item.id}" aria-label="更多操作">•••</button>
+      ${renderAgentCardMenu(item)}
+    </div>
   `;
 }
 
@@ -269,6 +280,17 @@ function renderAgentActions(item) {
   return agentState.tab === "center"
     ? `<button data-agent-action="view" data-agent-id="${item.id}">查看</button><button data-agent-action="reuse" data-agent-id="${item.id}">复用</button>`
     : `<button data-agent-action="edit" data-agent-id="${item.id}">编辑</button><button data-agent-action="reuse" data-agent-id="${item.id}">复用</button><button data-agent-action="delete" data-agent-id="${item.id}">删除</button>`;
+}
+
+function renderAgentMineCardActions(item) {
+  return `
+    <button data-agent-action="publish-market" data-agent-id="${item.id}">上架到AI应用广场</button>
+    <button data-agent-action="edit" data-agent-id="${item.id}">编辑应用</button>
+    <button data-agent-action="copy-app" data-agent-id="${item.id}">复制应用</button>
+    <button class="danger" data-agent-action="delete" data-agent-id="${item.id}">删除应用</button>
+    <button data-agent-action="disable-app" data-agent-id="${item.id}">停用应用</button>
+    <button data-agent-action="publish-link" data-agent-id="${item.id}">发布外链</button>
+  `;
 }
 
 function renderAgentCards(rows) {
@@ -282,10 +304,11 @@ function renderAgentCards(rows) {
 function renderAgentCard(item) {
   const time = agentState.tab === "center" ? item.sharedAt : item.createdAt;
   const timeLabel = agentState.tab === "center" ? "分享时间" : "创建时间";
+  const isTemplate = agentState.tab === "center";
   return `
     <article class="agent-card">
-      <button class="agent-card-more" data-agent-action="toggle-menu" data-agent-id="${item.id}" aria-label="更多操作">•••</button>
-      ${renderAgentCardMenu(item)}
+      ${isTemplate ? "" : `<button class="agent-card-more" data-agent-action="toggle-menu" data-agent-id="${item.id}" aria-label="更多操作">•••</button>`}
+      ${isTemplate ? "" : renderAgentCardMenu(item)}
       <div class="agent-card-avatar" aria-hidden="true">${getAgentAvatarMark(item)}</div>
       <div class="agent-card-content">
         <div class="agent-card-head">
@@ -314,7 +337,7 @@ function getAgentAvatarMark(item) {
 
 function renderAgentCardMenu(item) {
   if (agentState.menuId !== item.id) return "";
-  return `<div class="agent-card-menu">${renderAgentActions(item)}</div>`;
+  return `<div class="agent-card-menu">${renderAgentMineCardActions(item)}</div>`;
 }
 
 function renderAgentFooter(total, pageCount) {
@@ -444,6 +467,27 @@ function handleAgentClick(event) {
       agentMineData.unshift({ ...item, id: `agent-m-${Date.now()}`, name: item.name.includes("复用") ? item.name : `${item.name}(复用)`, createdAt: "2026-07-01 18:30:00" });
       agentState.toast = "已复用到我的智能体";
     }
+    agentState.menuId = null;
+    renderAgentModule();
+    return;
+  }
+  if (action === "copy-app") {
+    const item = agentMineData.find((entry) => entry.id === target.dataset.agentId);
+    if (item) {
+      agentMineData.unshift({ ...item, id: `agent-m-${Date.now()}`, name: `${item.name}-副本`, createdAt: "2026-07-03 18:30:00" });
+      agentState.toast = "应用已复制";
+    }
+    agentState.menuId = null;
+    renderAgentModule();
+    return;
+  }
+  if (action === "publish-market" || action === "disable-app" || action === "publish-link") {
+    const labels = {
+      "publish-market": "已上架到AI应用广场",
+      "disable-app": "应用已停用",
+      "publish-link": "发布外链已生成",
+    };
+    agentState.toast = labels[action] || "";
     agentState.menuId = null;
     renderAgentModule();
     return;
@@ -815,26 +859,26 @@ const dcData = {
     pageCount: 2,
     headers: ["序号", "问题", "答案", "图片", "创建时间", "所属智能体", "来源", "请求Token量", "返回Token量", "操作"],
     rows: [
-      [1, "帮我写一篇100字的科技...", "我无法直接生成文档文件...", "-", "2026-03-25 13:01:04", "未知机器人", "chatglm", "116", "869", "删除"],
-      [2, "你好", "你好，请提供进一步的说...", "-", "2026-03-25 11:31:08", "未知机器人", "chatglm", "105", "529", "删除"],
-      [3, "安全知识储备介绍下", "作为电力行业专家，安全...", "-", "2026-03-12 17:18:03", "未知机器人", "chatglm", "374", "2521", "删除"],
-      [4, "现场作业人员要符合哪些...", "作为电力行业专家，现场...", "-", "2026-03-12 17:16:12", "未知机器人", "chatglm", "377", "1805", "删除"],
-      [5, "帮我写一篇1000字的科...", "### 人工智能：重塑未来...", "-", "2026-03-12 14:51:55", "未知机器人", "chatglm", "112", "1360", "删除"],
-      [6, "我是一个学水利工程的本...", "1. 计算平均降雨量常见...", "-", "2026-03-12 14:20:21", "未知机器人", "chatglm", "153", "627", "删除"],
+      [1, "帮我写一篇100字的科技...", "我无法直接生成文档文件...", "-", "2026-03-25 13:01:04", "未知机器人", "自主规划智能体", "116", "869", "删除"],
+      [2, "你好", "你好，请提供进一步的说...", "-", "2026-03-25 11:31:08", "未知机器人", "自主规划智能体", "105", "529", "删除"],
+      [3, "安全知识储备介绍下", "作为电力行业专家，安全...", "-", "2026-03-12 17:18:03", "未知机器人", "自主规划智能体", "374", "2521", "删除"],
+      [4, "现场作业人员要符合哪些...", "作为电力行业专家，现场...", "-", "2026-03-12 17:16:12", "未知机器人", "自主规划智能体", "377", "1805", "删除"],
+      [5, "帮我写一篇1000字的科...", "### 人工智能：重塑未来...", "-", "2026-03-12 14:51:55", "未知机器人", "自主规划智能体", "112", "1360", "删除"],
+      [6, "我是一个学水利工程的本...", "1. 计算平均降雨量常见...", "-", "2026-03-12 14:20:21", "未知机器人", "自主规划智能体", "153", "627", "删除"],
       [7, "试岗后被公司辞退，公司...", "根据文档五，劳动合同期...", "-", "2026-03-09 16:11:51", "基础法律问答", "rag", "3820", "2108", "删除"],
-      [8, "守护身份信息，筑牢数字...", "问题不明确，请提供进一...", "-", "2026-03-09 15:38:05", "未知机器人", "chatglm", "1034", "5562", "删除"],
-      [9, "你单次最多可以输入多少...", "这取决于具体的模型版本...", "-", "2026-03-09 15:34:32", "未知机器人", "chatglm", "112", "1056", "删除"],
-      [10, "查询3月4日北京到上海...", "抱歉，我无法实时查询高...", "-", "2026-03-04 10:37:24", "金价查询", "chatglm", "115", "845", "删除"],
+      [8, "守护身份信息，筑牢数字...", "问题不明确，请提供进一...", "-", "2026-03-09 15:38:05", "未知机器人", "自主规划智能体", "1034", "5562", "删除"],
+      [9, "你单次最多可以输入多少...", "这取决于具体的模型版本...", "-", "2026-03-09 15:34:32", "未知机器人", "自主规划智能体", "112", "1056", "删除"],
+      [10, "查询3月4日北京到上海...", "抱歉，我无法实时查询高...", "-", "2026-03-04 10:37:24", "金价查询", "自主规划智能体", "115", "845", "删除"],
     ],
   },
   feedback: {
     total: 2,
     toolbar: "feedback",
     pageCount: 1,
-    headers: ["序号", "反馈内容", "状态", "类型", "联系人", "联系方式", "微信ID", "机器人ID", "操作"],
+    headers: ["序号", "反馈内容", "状态", "类型", "联系人", "联系方式", "操作"],
     rows: [
-      [1, "测试", '<span class="status-pill pending">待解决</span>', '<span class="status-pill fault">使用故障</span>', "测试", "13520689985", "h5", "469", "解决　搁置　删除"],
-      [2, "用不了", '<span class="status-pill pending">待解决</span>', '<span class="status-pill fault">使用故障</span>', "alina", "13520689985", "h5", "3", "解决　搁置　删除"],
+      [1, "测试", '<span class="status-pill pending">待解决</span>', '<span class="status-pill fault">使用故障</span>', "测试", "13520689985", "解决　搁置　删除"],
+      [2, "用不了", '<span class="status-pill pending">待解决</span>', '<span class="status-pill fault">使用故障</span>', "alina", "13520689985", "解决　搁置　删除"],
     ],
   },
   rating: {
@@ -1189,6 +1233,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 const apiServiceState = {
+  tab: "mine",
   query: "",
   status: "全部状态",
   modal: null,
@@ -1220,7 +1265,7 @@ function getVisibleApiServiceRows() {
   return apiServiceRows.filter((item) => {
     const haystack = [item.title, item.desc, item.creator, item.unit, item.uid].join(" ").toLowerCase();
     const matchesQuery = !query || haystack.includes(query);
-    const matchesStatus = apiServiceState.status === "全部状态" || item.status === apiServiceState.status;
+    const matchesStatus = apiServiceState.tab !== "mine" || apiServiceState.status === "全部状态" || item.status === apiServiceState.status;
     return matchesQuery && matchesStatus;
   });
 }
@@ -1233,20 +1278,20 @@ function renderApiServiceModule() {
   root.innerHTML = `
     <div class="api-service-page">
       <div class="api-service-toolbar">
-        <div class="api-service-title">
-          <h1>API</h1>
-        </div>
+        ${renderApiServiceTabs()}
         <div class="api-service-filters">
           <button class="api-service-primary" data-api-action="open-create">+ 新建</button>
           <label class="api-service-search">
             <span>⌕</span>
             <input type="text" placeholder="搜索" value="${escapeHtml(apiServiceState.query)}" data-api-filter="query" />
           </label>
-          <label class="api-service-status">
-            <select data-api-filter="status">
-              ${["全部状态", "已发布", "未发布"].map((status) => `<option value="${status}" ${apiServiceState.status === status ? "selected" : ""}>${status}</option>`).join("")}
-            </select>
-          </label>
+          ${apiServiceState.tab === "mine" ? `
+            <label class="api-service-status">
+              <select data-api-filter="status">
+                ${["全部状态", "已发布", "未发布"].map((status) => `<option value="${status}" ${apiServiceState.status === status ? "selected" : ""}>${status}</option>`).join("")}
+              </select>
+            </label>
+          ` : ""}
         </div>
       </div>
       <div class="api-card-grid">
@@ -1257,11 +1302,24 @@ function renderApiServiceModule() {
   renderApiServiceModal();
 }
 
-function renderApiServiceCard(item) {
+function renderApiServiceTabs() {
   return `
-    <article class="api-tool-card">
-      <button class="api-card-more" data-api-action="card-menu" data-api-id="${item.id}" aria-label="更多操作">•••</button>
-      ${renderApiServiceMenu(item)}
+    <div class="api-service-tabs" role="tablist" aria-label="API类型">
+      ${[
+        ["template", "API模版"],
+        ["mine", "我的API"],
+        ["dataset", "数据集API"],
+      ].map(([tab, label]) => `<button class="${apiServiceState.tab === tab ? "active" : ""}" data-api-action="set-tab" data-api-tab="${tab}" role="tab" aria-selected="${apiServiceState.tab === tab}">${label}</button>`).join("")}
+    </div>
+  `;
+}
+
+function renderApiServiceCard(item) {
+  const isReadonly = apiServiceState.tab !== "mine";
+  return `
+    <article class="api-tool-card ${isReadonly ? "api-template-card" : ""}">
+      ${isReadonly ? "" : `<button class="api-card-more" data-api-action="card-menu" data-api-id="${item.id}" aria-label="更多操作">•••</button>`}
+      ${isReadonly ? "" : renderApiServiceMenu(item)}
       <div class="api-card-main">
         <div class="api-card-avatar ${item.tone === "muted" ? "muted" : ""}" aria-hidden="true"></div>
         <div class="api-card-copy">
@@ -1271,9 +1329,7 @@ function renderApiServiceCard(item) {
       </div>
       <div class="api-card-meta">
         <span>创建者：${escapeHtml(item.creator)}</span>
-        <span>单位：${escapeHtml(item.unit)}</span>
-        <span>UID：${escapeHtml(item.uid)}</span>
-        <span>${escapeHtml(item.status)}</span>
+        ${isReadonly ? "" : `<span>单位：${escapeHtml(item.unit)}</span><span>UID：${escapeHtml(item.uid)}</span><span>${escapeHtml(item.status)}</span>`}
       </div>
     </article>
   `;
@@ -1359,6 +1415,13 @@ function handleApiServiceClick(event) {
   if (!target.matches("[data-api-action]")) return;
 
   const action = target.dataset.apiAction;
+  if (action === "set-tab") {
+    apiServiceState.tab = target.dataset.apiTab || "mine";
+    apiServiceState.status = "全部状态";
+    apiServiceState.menuId = null;
+    renderApiServiceModule();
+    return;
+  }
   if (action === "open-create") {
     apiServiceState.modal = "create";
     apiServiceState.activeId = null;
@@ -1470,6 +1533,7 @@ if (apiServicePanel) {
 
 const workflowState = {
   mode: "list",
+  tab: "template",
   query: "",
   status: "",
   modal: null,
@@ -1515,7 +1579,7 @@ function getVisibleWorkflowItems() {
   const query = workflowState.query.trim().toLowerCase();
   return workflowItems.filter((item) => {
     const matchesQuery = !query || [item.name, item.desc, item.owner, item.dept, item.uid].join(" ").toLowerCase().includes(query);
-    const matchesStatus = !workflowState.status || item.status === workflowState.status;
+    const matchesStatus = workflowState.tab === "template" || !workflowState.status || item.status === workflowState.status;
     return matchesQuery && matchesStatus;
   });
 }
@@ -1531,12 +1595,8 @@ function renderWorkflowList() {
   const rows = getVisibleWorkflowItems();
   return `
     <div class="workflow-page workflow-list-page">
-      <div class="workflow-list-head">
-        <div>
-          <div class="workflow-breadcrumb">工具集 / <strong>工作流</strong></div>
-          <h1>工作流</h1>
-          <p>统一管理工作流编排、试运行、发布与导出。</p>
-        </div>
+      <div class="workflow-list-tabbar">
+        ${renderWorkflowTabs()}
         <button class="workflow-new-btn" data-workflow-action="open-create">+ 新建</button>
       </div>
       <div class="workflow-list-controls">
@@ -1544,10 +1604,12 @@ function renderWorkflowList() {
           <span>⌕</span>
           <input type="text" placeholder="请输入工作流名称、创建人或UID" value="${escapeHtml(workflowState.query)}" data-workflow-query />
         </label>
-        <div class="workflow-status-select">
-          <button data-workflow-action="toggle-status">${escapeHtml(workflowState.status || "全部状态")} <span>⌄</span></button>
-          ${workflowState.statusOpen ? renderWorkflowStatusMenu() : ""}
-        </div>
+        ${workflowState.tab === "mine" ? `
+          <div class="workflow-status-select">
+            <button data-workflow-action="toggle-status">${escapeHtml(workflowState.status || "全部状态")} <span>⌄</span></button>
+            ${workflowState.statusOpen ? renderWorkflowStatusMenu() : ""}
+          </div>
+        ` : ""}
         <button class="workflow-reset" data-workflow-action="reset-list">重 置</button>
       </div>
       <div class="workflow-card-grid">
@@ -1558,25 +1620,36 @@ function renderWorkflowList() {
   `;
 }
 
-function renderWorkflowCard(item) {
+function renderWorkflowTabs() {
   return `
-    <article class="workflow-card" data-workflow-id="${item.id}">
-      <button class="workflow-card-more" data-workflow-action="card-more" data-workflow-id="${item.id}" aria-label="更多操作">...</button>
+    <div class="workflow-tabs" role="tablist" aria-label="工作流类型">
+      ${[
+        ["template", "工作流模版"],
+        ["mine", "我的工作流"],
+      ].map(([tab, label]) => `<button class="${workflowState.tab === tab ? "active" : ""}" data-workflow-action="set-tab" data-workflow-tab="${tab}" role="tab" aria-selected="${workflowState.tab === tab}">${label}</button>`).join("")}
+    </div>
+  `;
+}
+
+function renderWorkflowCard(item) {
+  const isTemplate = workflowState.tab === "template";
+  return `
+    <article class="workflow-card ${isTemplate ? "template-card" : "mine-card"}" data-workflow-id="${item.id}">
+      ${isTemplate ? "" : `<button class="workflow-card-more" data-workflow-action="card-more" data-workflow-id="${item.id}" aria-label="更多操作">...</button>`}
       <div class="workflow-avatar" aria-hidden="true"><span></span></div>
       <div class="workflow-card-body">
         <div class="workflow-card-title-row">
           <h3 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3>
-          <em class="${item.status === "已发布" ? "published" : "draft"}">${escapeHtml(item.status)}</em>
+          ${isTemplate ? "" : `<em class="${item.status === "已发布" ? "published" : "draft"}">${escapeHtml(item.status)}</em>`}
         </div>
         <p title="${escapeHtml(item.desc)}">${escapeHtml(item.desc)}</p>
       </div>
       <div class="workflow-card-type">工作流</div>
       <div class="workflow-card-foot">
         <span>创建者：${escapeHtml(item.owner)}</span>
-        <span>单位：${escapeHtml(item.dept)}</span>
-        <span>UID：${escapeHtml(item.uid)}</span>
+        ${isTemplate ? "" : `<span>单位：${escapeHtml(item.dept)}</span><span>UID：${escapeHtml(item.uid)}</span>`}
       </div>
-      ${workflowState.menuId === String(item.id) ? renderWorkflowCardMenu(item) : ""}
+      ${!isTemplate && workflowState.menuId === String(item.id) ? renderWorkflowCardMenu(item) : ""}
     </article>
   `;
 }
@@ -1861,6 +1934,14 @@ function handleWorkflowClick(event) {
       workflowState.autoPrompt = target.dataset.workflowTemplate;
       renderWorkflowModule();
     }
+    return;
+  }
+  if (action === "set-tab") {
+    workflowState.tab = target.dataset.workflowTab || "template";
+    workflowState.status = "";
+    workflowState.statusOpen = false;
+    workflowState.menuId = null;
+    renderWorkflowModule();
     return;
   }
   if (action === "toggle-status") {

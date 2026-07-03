@@ -4777,6 +4777,118 @@ body [data-agent-root] .agent-card-more {
   height: 24px;
 }
 
+/* Final app/API tab and menu polish */
+body [data-agent-root="center"] .agent-card-more {
+  display: none;
+}
+
+body [data-agent-root="mine"] .agent-card-menu {
+  min-width: 158px;
+  right: 14px;
+}
+
+body [data-agent-root="mine"] .agent-card-menu button {
+  height: 34px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+body [data-agent-root="mine"] .agent-card-menu button.danger {
+  color: #df1f2d;
+}
+
+body [data-agent-root="mine"] .agent-card-menu button.danger:hover {
+  background: #fff1f1;
+  color: #df1f2d;
+}
+
+body .agent-table-more-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+body .agent-table-more {
+  width: 28px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9aa1ad;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+body .agent-table-more-wrap .agent-card-menu {
+  top: 28px;
+  right: 0;
+}
+
+body .workflow-list-head.workflow-list-head-compact {
+  justify-content: flex-end;
+}
+
+body .workflow-list-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 16px;
+}
+
+body .workflow-list-tabbar .workflow-tabs {
+  margin: 0;
+}
+
+body .workflow-list-tabbar .workflow-new-btn {
+  margin-left: auto;
+}
+
+body [data-panel="api"] .api-service-toolbar {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+body [data-panel="api"] .api-service-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  box-shadow: inset 0 0 0 1px #edf0f5;
+}
+
+body [data-panel="api"] .api-service-tabs button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #596171;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body [data-panel="api"] .api-service-tabs button.active {
+  background: #fff0f0;
+  color: var(--red);
+  box-shadow: 0 4px 12px rgba(237, 27, 36, 0.08);
+}
+
+body [data-panel="api"] .api-template-card .api-card-meta span:not(:first-child) {
+  display: none;
+}
+
+body [data-panel="api"] .api-template-card .api-card-meta {
+  gap: 0;
+}
+
+body [data-panel="api"] .api-template-card .api-card-more {
+  display: none;
+}
+
 /* Final compact workflow auto modal - actual EOF */
 body .workflow-modal-backdrop.auto {
   align-items: center;
@@ -7677,6 +7789,35 @@ body .eval-column-card > .eval-column-card-head {
   font-size: 14px;
 }
 
+body .workflow-tabs {
+  width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  margin: 0 0 16px;
+  box-shadow: inset 0 0 0 1px #edf0f5;
+}
+
+body .workflow-tabs button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #596171;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body .workflow-tabs button.active {
+  background: #fff0f0;
+  color: var(--red);
+  box-shadow: 0 4px 12px rgba(237, 27, 36, 0.08);
+}
+
 .workflow-list-controls {
   position: static;
   display: flex;
@@ -7844,6 +7985,14 @@ body .eval-column-card > .eval-column-card-head {
 .workflow-card-title-row em.draft {
   background: #f3f4f6;
   color: #6b7280;
+}
+
+body .workflow-card-title-row:has(h3:only-child) {
+  padding-right: 0;
+}
+
+body .workflow-card-title-row:has(h3:only-child) h3 {
+  margin-bottom: 10px;
 }
 
 .workflow-avatar {
