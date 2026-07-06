@@ -1091,38 +1091,46 @@ function renderDialogModal() {
     document.body.appendChild(modal);
   }
 
-  modal.className = "dc-detail-page";
+  modal.className = "dc-detail-backdrop";
   modal.innerHTML = `
-    <div class="dc-detail-head">
-      <h1>对话详情</h1>
-      <button class="dc-detail-close" data-dc-action="关闭详情" aria-label="关闭">×</button>
-    </div>
+    <aside class="dc-detail-page" role="dialog" aria-modal="true" aria-labelledby="dcDialogTitle">
+      <div class="dc-detail-head">
+        <h1 id="dcDialogTitle">对话详情</h1>
+        <button class="dc-detail-close" data-dc-action="关闭详情" aria-label="关闭">×</button>
+      </div>
 
-    <div class="dc-detail-body">
-      <section class="dc-detail-summary">
-        <div class="dc-summary-grid">
-          <div><span>用户名称</span><strong>${escapeHtml(row[3])}</strong></div>
-          <div><span>渠道</span><strong class="dc-channel">-</strong></div>
-          <div><span>时间</span><strong>${escapeHtml(fullTime)}</strong></div>
-          <div><span>反馈</span><strong class="${feedbackClass}">${feedbackType === "点赞" ? "▴" : "▾"} ${feedbackType}</strong></div>
-        </div>
-      </section>
+      <div class="dc-detail-body">
+        <section class="dc-detail-summary">
+          <div class="dc-summary-grid">
+            <div><span>用户名称</span><strong>${escapeHtml(row[3])}</strong></div>
+            <div><span>渠道</span><strong class="dc-channel">-</strong></div>
+            <div><span>时间</span><strong>${escapeHtml(fullTime)}</strong></div>
+            <div><span>反馈</span><strong class="${feedbackClass}">${feedbackType === "点赞" ? "▴" : "▾"} ${feedbackType}</strong></div>
+          </div>
+        </section>
 
-      <section class="dc-detail-chat">
-        <div class="dc-detail-user">
-          <div class="dc-user-bubble">${escapeHtml(detail.userMessage)}</div>
-          <div class="dc-message-time">${escapeHtml(fullTime)}</div>
-        </div>
-        <div class="dc-detail-reply">
-          <div class="dc-reply-text">${escapeHtml(detail.reply)}</div>
-          <div class="dc-message-time">${escapeHtml(fullTime)}</div>
-        </div>
-      </section>
-    </div>
+        <section class="dc-detail-chat">
+          <div class="dc-detail-user">
+            <div class="dc-user-bubble">${escapeHtml(detail.userMessage)}</div>
+            <div class="dc-message-time">${escapeHtml(fullTime)}</div>
+          </div>
+          <div class="dc-detail-reply">
+            <div class="dc-reply-text">${escapeHtml(detail.reply)}</div>
+            <div class="dc-message-time">${escapeHtml(fullTime)}</div>
+          </div>
+        </section>
+      </div>
+    </aside>
   `;
 }
 
 function handleDataCenterClick(event) {
+  if (event.target.matches("[data-dc-dialog-modal]")) {
+    dcState.dialogRowId = null;
+    renderDialogModal();
+    return;
+  }
+
   const target = event.target.closest("button");
   if (!target) return;
 
@@ -1138,6 +1146,7 @@ function handleDataCenterClick(event) {
     dcState.selected.clear();
     dcState.query = "";
     dcState.segment = "全部";
+    dcState.dialogRowId = null;
     renderDataCenter();
     return;
   }

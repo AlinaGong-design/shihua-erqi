@@ -8511,132 +8511,160 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   background: #fff;
 }
 
-.dc-detail-page {
+.dc-detail-backdrop {
   position: fixed;
   inset: 0;
   z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(18, 24, 38, 0.26);
+}
+
+.dc-detail-page {
+  width: min(620px, 100vw);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
   background: #fff;
   color: #252b38;
-  overflow: auto;
+  box-shadow: -18px 0 46px rgba(18, 24, 38, 0.18);
+  overflow: hidden;
 }
 
 .dc-detail-head {
-  height: 92px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 22px;
   border-bottom: 1px solid #f0dada;
 }
 
 .dc-detail-head h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 18px;
   line-height: 1;
   font-weight: 800;
 }
 
 .dc-detail-close {
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   border: 0;
-  background: transparent;
-  color: #777;
-  font-size: 38px;
+  border-radius: 8px;
+  background: #f6f7f9;
+  color: #777f8f;
+  font-size: 24px;
   line-height: 1;
 }
 
 .dc-detail-body {
-  padding: 32px 28px 48px;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 20px 28px;
+  background: #f7f8fa;
 }
 
 .dc-detail-summary,
 .dc-detail-chat {
-  max-width: 1080px;
-  margin: 0 auto;
-  border-radius: 14px;
-  background: #fff8f8;
+  border: 1px solid #edf0f5;
+  border-radius: 8px;
+  background: #fff;
 }
 
 .dc-detail-summary {
-  padding: 30px 32px;
-  margin-bottom: 32px;
+  padding: 18px;
+  margin-bottom: 16px;
 }
 
 .dc-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 28px 80px;
+  gap: 16px 20px;
 }
 
 .dc-summary-grid div {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  display: grid;
+  gap: 6px;
   min-width: 0;
 }
 
 .dc-summary-grid span {
   color: #9aa1af;
-  font-size: 22px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .dc-summary-grid strong {
   color: #202737;
-  font-size: 22px;
+  font-size: 14px;
   font-weight: 800;
+  word-break: break-word;
 }
 
 .dc-channel {
-  min-width: 34px;
-  height: 34px;
+  width: max-content;
+  min-width: 24px;
+  height: 24px;
   display: inline-grid;
   place-items: center;
   border: 1px solid #efdada;
-  border-radius: 10px;
-  background: #fff;
+  border-radius: 6px;
+  background: #fafafa;
 }
 
 .dc-detail-chat {
-  min-height: 780px;
-  padding: 40px 32px;
+  min-height: 360px;
+  padding: 20px 18px;
 }
 
 .dc-detail-user {
   display: grid;
   justify-items: end;
-  gap: 14px;
-  margin-bottom: 58px;
+  gap: 8px;
+  margin-bottom: 28px;
 }
 
 .dc-user-bubble {
-  max-width: 58%;
-  padding: 34px 34px;
-  border-radius: 14px;
+  max-width: 78%;
+  padding: 12px 14px;
+  border-radius: 8px;
   background: #fff0f0;
   color: #151b2a;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 700;
+  word-break: break-word;
 }
 
 .dc-detail-reply {
   display: grid;
-  gap: 28px;
+  gap: 8px;
 }
 
 .dc-reply-text {
-  max-width: 92%;
+  max-width: 96%;
   color: #303648;
-  font-size: 26px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.8;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .dc-message-time {
   color: #9aa1af;
-  font-size: 22px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .dc-detail-page {
+    width: 100vw;
+  }
+
+  .dc-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dc-footer {
