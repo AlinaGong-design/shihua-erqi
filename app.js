@@ -558,6 +558,7 @@ const dbState = {
   tab: "official",
   query: "",
   modal: null,
+  activeId: null,
 };
 
 const dbOfficialData = [
@@ -575,6 +576,10 @@ function getDbRows() {
   const query = dbState.query.trim().toLowerCase();
   if (!query) return source;
   return source.filter((item) => [item.displayName, item.callName, item.desc, item.owner].join(" ").toLowerCase().includes(query));
+}
+
+function getDbItemById(id) {
+  return [...dbOfficialData, ...dbMineData].find((item) => item.id === id);
 }
 
 function renderDbPage() {
@@ -671,6 +676,46 @@ function renderDbModal() {
     modal.dataset.dbModal = "true";
     document.body.appendChild(modal);
   }
+  if (dbState.modal === "view") {
+    const item = getDbItemById(dbState.activeId);
+    if (!item) {
+      dbState.modal = null;
+      dbState.activeId = null;
+      modal.remove();
+      return;
+    }
+    modal.className = "db-modal-backdrop";
+    modal.innerHTML = `
+      <div class="db-modal db-view-modal" role="dialog" aria-modal="true" aria-labelledby="dbViewTitle">
+        <div class="db-modal-head">
+          <h2 id="dbViewTitle">查看数据库</h2>
+          <button type="button" data-db-action="close-modal" aria-label="关闭">×</button>
+        </div>
+        <div class="db-modal-body db-view-body">
+          <section class="db-view-summary">
+            <div class="db-view-avatar" aria-hidden="true">DB</div>
+            <div>
+              <h3>${escapeHtml(item.displayName)}</h3>
+              <p>${escapeHtml(item.desc)}</p>
+            </div>
+          </section>
+          <section class="db-view-grid" aria-label="数据库详情">
+            <div><span>数据库显示名称</span><strong>${escapeHtml(item.displayName)}</strong></div>
+            <div><span>数据库调用名称</span><strong>${escapeHtml(item.callName)}</strong></div>
+            <div><span>数据量</span><strong>${item.count.toLocaleString()}</strong></div>
+            <div><span>创建人</span><strong>${escapeHtml(item.owner)}</strong></div>
+            <div><span>创建时间</span><strong>${escapeHtml(item.createdAt)}</strong></div>
+            <div><span>更新时间</span><strong>${escapeHtml(item.updatedAt)}</strong></div>
+          </section>
+        </div>
+        <div class="db-modal-foot">
+          <button class="primary" type="button" data-db-action="close-modal">关 闭</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   modal.className = "db-modal-backdrop";
   modal.innerHTML = `
     <div class="db-modal" role="dialog" aria-modal="true" aria-labelledby="dbCreateTitle">
@@ -739,12 +784,21 @@ function renderDbModal() {
 }
 
 function handleDbClick(event) {
+  if (event.target.matches("[data-db-modal]")) {
+    dbState.modal = null;
+    dbState.activeId = null;
+    renderDbModal();
+    return;
+  }
+
   const target = event.target.closest("button");
   if (!target) return;
   const action = target.dataset.dbAction;
   if (target.dataset.dbTab) {
     dbState.tab = target.dataset.dbTab;
     dbState.query = "";
+    dbState.modal = null;
+    dbState.activeId = null;
     renderDbPage();
     return;
   }
@@ -752,12 +806,14 @@ function handleDbClick(event) {
   if (action === "create") {
     dbState.tab = "mine";
     dbState.modal = "create";
+    dbState.activeId = null;
     renderDbPage();
     return;
   }
   if (action === "close-modal") {
     dbState.modal = null;
-    renderDbPage();
+    dbState.activeId = null;
+    renderDbModal();
     return;
   }
   if (action === "download-template") {
@@ -765,7 +821,9 @@ function handleDbClick(event) {
     return;
   }
   if (action === "view") {
-    showDbToast("查看数据库详情");
+    dbState.modal = "view";
+    dbState.activeId = target.dataset.dbId;
+    renderDbModal();
     return;
   }
   if (action === "delete") {
@@ -1554,6 +1612,8 @@ const workflowState = {
   canvasMode: "manual",
   selectedNode: "",
   suppressNextClick: false,
+  addedNodes: [],
+  edges: [],
   nodePositions: {
     input: { x: 210, y: 250 },
     vision: { x: 560, y: 210 },
@@ -1567,6 +1627,28 @@ const workflowState = {
     import: false,
   },
   activeTitle: "图像理解Demo",
+};
+
+const workflowNodeKinds = {
+  "语言大模型": { type: "llm", tone: "red", title: "语言大模型", fields: ["输入内容（Prompt）", "模型"] },
+  "图像理解": { type: "vision", tone: "cyan", title: "图像理解", fields: ["输入内容（Prompt）", "图片"] },
+  "视频理解": { type: "video", tone: "emerald", title: "视频理解", fields: ["输入内容（Prompt）", "视频"] },
+  "推理大模型": { type: "reason", tone: "green", title: "推理大模型", fields: ["推理问题", "模型"] },
+  "条件判断": { type: "condition", tone: "pink", title: "条件判断", fields: ["判断条件", "分支规则"] },
+  "工具调用": { type: "tool", tone: "orange", title: "工具调用", fields: ["工具名称", "参数配置"] },
+  "提示词编辑": { type: "prompt", tone: "yellow", title: "提示词编辑", fields: ["提示词"] },
+  "编程函数": { type: "code", tone: "red", title: "编程函数", fields: ["函数代码"] },
+  "JSON 处理": { type: "json", tone: "blue", title: "JSON 处理", fields: ["JSON路径", "处理规则"] },
+  "SQL自定义": { type: "sql", tone: "navy", title: "SQL自定义", fields: ["数据源", "SQL语句"] },
+  "变量赋值": { type: "variable", tone: "rose", title: "变量赋值", fields: ["变量名", "变量值"] },
+  "问数": { type: "query", tone: "amber", title: "问数", fields: ["查询问题"] },
+  "知识库检索": { type: "knowledge", tone: "red", title: "知识库检索", fields: ["知识库", "检索问题"] },
+  "单文档解析检索": { type: "document", tone: "magenta", title: "单文档解析检索", fields: ["文档", "检索问题"] },
+  "自定义重排序": { type: "rerank", tone: "orange", title: "自定义重排序", fields: ["排序模型"] },
+  "自定义检索": { type: "custom-search", tone: "rose", title: "自定义检索", fields: ["检索接口"] },
+  "自定义入库": { type: "custom-store", tone: "purple", title: "自定义入库", fields: ["入库接口"] },
+  "文本呈现": { type: "output", tone: "orange", title: "文本呈现", fields: ["文本内容"] },
+  "思维导图": { type: "mindmap", tone: "purple", title: "思维导图", fields: ["主题内容"] },
 };
 
 const workflowItems = [
@@ -1596,6 +1678,7 @@ function getVisibleWorkflowItems() {
 function renderWorkflowModule() {
   const root = document.querySelector("[data-workflow-root]");
   if (!root) return;
+  if (workflowState.mode === "canvas") ensureWorkflowEdges();
   root.innerHTML = workflowState.mode === "canvas" ? renderWorkflowCanvas() : renderWorkflowList();
   if (workflowState.mode === "canvas") requestAnimationFrame(updateWorkflowLines);
 }
@@ -1833,12 +1916,8 @@ function renderWorkflowCanvasNodes() {
       </div>
       <i class="workflow-port out one"></i><i class="workflow-port out two"></i>
     </div>
+    ${renderWorkflowLines()}
     ${auto ? `
-      <svg class="workflow-lines" aria-hidden="true">
-        <path data-workflow-edge="input:one-vision:one" />
-        <path data-workflow-edge="input:two-vision:two" />
-        <path data-workflow-edge="vision:three-output:one" />
-      </svg>
       <div class="workflow-node vision success ${workflowState.selectedNode === "vision" ? "selected" : ""}" data-workflow-node="vision" style="--x:${positions.vision.x}px;--y:${positions.vision.y}px">
         <div class="workflow-node-status">● 运行成功 <span>5.2s</span><button data-workflow-action="node-result">展开运行结果</button></div>
         <div class="workflow-node-head"><span>⌄</span><strong>图像理解</strong></div>
@@ -1856,10 +1935,82 @@ function renderWorkflowCanvasNodes() {
         <div class="workflow-node-body">
           <label>文本内容<textarea></textarea></label>
         </div>
-        <i class="workflow-port in one"></i>
+        <i class="workflow-port in one"></i><i class="workflow-port out three"></i>
       </div>
     ` : ""}
+    ${workflowState.addedNodes.map(renderWorkflowAddedNode).join("")}
     <button class="workflow-auto-float" data-workflow-action="auto-arrange" data-workflow-float="auto" type="button" style="--x:${autoFloat.x}px;--y:${autoFloat.y}px"><span>AI</span> 自动编排</button>
+  `;
+}
+
+function getWorkflowVisibleEdges() {
+  ensureWorkflowEdges();
+  const autoEdges = workflowState.canvasMode === "auto"
+    ? [
+      { from: "input", fromPort: "one", to: "vision", toPort: "one" },
+      { from: "vision", fromPort: "three", to: "output", toPort: "one" },
+    ]
+    : [];
+  if (workflowState.canvasMode === "auto") return autoEdges;
+  return normalizeWorkflowEdges([...autoEdges, ...workflowState.edges]);
+}
+
+function ensureWorkflowEdges() {
+  if (workflowState.edges.length > 0 || workflowState.addedNodes.length === 0) return;
+  const orderedNodes = ["input", ...workflowState.addedNodes.map((item) => item.id)]
+    .sort((a, b) => getWorkflowNodePosition(a).x - getWorkflowNodePosition(b).x);
+  workflowState.edges = orderedNodes.slice(1).reduce((edges, nodeId, index) => {
+    const from = orderedNodes[index];
+    const fromPort = getWorkflowNextOutPort(from);
+    if (fromPort) edges.push({ from, fromPort, to: nodeId, toPort: "one" });
+    return edges;
+  }, []);
+}
+
+function normalizeWorkflowEdges(edges) {
+  const seenPairs = new Set();
+  const usedPorts = new Set();
+  return edges.filter((edge) => {
+    if (!edge.from || !edge.to || !edge.fromPort || !edge.toPort || edge.from === edge.to) return false;
+    const pairKey = `${edge.from}->${edge.to}`;
+    const portKey = `${edge.from}:${edge.fromPort}`;
+    if (seenPairs.has(pairKey) || usedPorts.has(portKey)) return false;
+    seenPairs.add(pairKey);
+    usedPorts.add(portKey);
+    return true;
+  });
+}
+
+function renderWorkflowLines() {
+  const edges = getWorkflowVisibleEdges();
+  return `
+    <svg class="workflow-lines" aria-hidden="true">
+      ${edges.map(renderWorkflowLinePath).join("")}
+    </svg>
+  `;
+}
+
+function getWorkflowEdgeKey(edge) {
+  return `${edge.from}:${edge.fromPort || "three"}->${edge.to}:${edge.toPort || "one"}`;
+}
+
+function renderWorkflowLinePath(edge) {
+  return `<path data-workflow-edge="${getWorkflowEdgeKey(edge)}" data-workflow-from="${edge.from}" data-workflow-from-port="${edge.fromPort || "three"}" data-workflow-to="${edge.to}" data-workflow-to-port="${edge.toPort || "one"}" />`;
+}
+
+function renderWorkflowAddedNode(item) {
+  const position = workflowState.nodePositions[item.id] || item.position || { x: 420, y: 260 };
+  const selected = workflowState.selectedNode === item.id ? "selected" : "";
+  const fields = item.fields.length ? item.fields : ["输入内容"];
+  return `
+    <div class="workflow-node custom ${item.type} ${selected}" data-workflow-node="${item.id}" style="--x:${position.x}px;--y:${position.y}px">
+      <div class="workflow-node-head"><span>⌄</span><strong>${escapeHtml(item.title)}</strong><em>✎ 🗑</em></div>
+      <div class="workflow-node-body">
+        ${fields.map((field) => `<label>${escapeHtml(field)}<textarea placeholder="点击配置"></textarea></label>`).join("")}
+        <button>输出</button>
+      </div>
+      <i class="workflow-port in one"></i><i class="workflow-port out three"></i>
+    </div>
   `;
 }
 
@@ -1886,22 +2037,31 @@ function updateWorkflowLines() {
   const canvas = document.querySelector("[data-panel=\"workflow\"] .workflow-canvas");
   const svg = canvas?.querySelector(".workflow-lines");
   if (!canvas || !svg) return;
+  syncWorkflowLinePaths(svg);
   const width = Math.max(canvas.scrollWidth, canvas.clientWidth, 1340);
   const height = Math.max(canvas.scrollHeight, canvas.clientHeight, 720);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("width", String(width));
   svg.setAttribute("height", String(height));
-  const edges = [
-    ["input", "one", "out", "vision", "one", "in"],
-    ["input", "two", "out", "vision", "two", "in"],
-    ["vision", "three", "out", "output", "one", "in"],
-  ];
-  edges.forEach(([fromNode, fromPort, fromSide, toNode, toPort, toSide], index) => {
-    const start = getWorkflowPortPoint(canvas, fromNode, fromPort, fromSide);
-    const end = getWorkflowPortPoint(canvas, toNode, toPort, toSide);
-    const path = svg.querySelectorAll("path")[index];
-    if (start && end && path) path.setAttribute("d", workflowBezier(start, end));
+  svg.querySelectorAll("path").forEach((path) => {
+    const start = getWorkflowPortPoint(canvas, path.dataset.workflowFrom, path.dataset.workflowFromPort, "out");
+    const end = getWorkflowPortPoint(canvas, path.dataset.workflowTo, path.dataset.workflowToPort, "in");
+    if (start && end) {
+      path.setAttribute("d", workflowBezier(start, end));
+      path.removeAttribute("hidden");
+    } else {
+      path.setAttribute("hidden", "true");
+    }
   });
+}
+
+function syncWorkflowLinePaths(svg) {
+  ensureWorkflowEdges();
+  const edges = getWorkflowVisibleEdges();
+  const currentKeys = Array.from(svg.querySelectorAll("path")).map((path) => path.dataset.workflowEdge).join("|");
+  const nextKeys = edges.map(getWorkflowEdgeKey).join("|");
+  if (currentKeys === nextKeys) return;
+  svg.innerHTML = edges.map(renderWorkflowLinePath).join("");
 }
 
 function renderWorkflowRunPanel() {
@@ -1916,6 +2076,77 @@ function renderWorkflowRunPanel() {
       <button class="workflow-copy">▱</button>
     </aside>
   `;
+}
+
+function getWorkflowNodePosition(id) {
+  return workflowState.nodePositions[id] || workflowState.addedNodes.find((item) => item.id === id)?.position || { x: 210, y: 250 };
+}
+
+function getWorkflowConnectableNodes() {
+  const nodes = ["input"];
+  if (workflowState.canvasMode === "auto") nodes.push("vision", "output");
+  workflowState.addedNodes.forEach((item) => nodes.push(item.id));
+  return nodes;
+}
+
+function getWorkflowLastNodeId() {
+  if (workflowState.selectedNode && getWorkflowConnectableNodes().includes(workflowState.selectedNode)) return workflowState.selectedNode;
+  const edgeTargets = new Set(workflowState.edges.map((edge) => edge.to));
+  const addedTail = [...workflowState.addedNodes].reverse().find((item) => !edgeTargets.has(item.id));
+  if (addedTail) return addedTail.id;
+  if (workflowState.addedNodes.length) return workflowState.addedNodes[workflowState.addedNodes.length - 1].id;
+  return workflowState.canvasMode === "auto" ? "output" : "input";
+}
+
+function getWorkflowDefaultOutPort(id) {
+  if (id === "input") return "one";
+  return "three";
+}
+
+function getWorkflowOutPorts(id) {
+  if (id === "input") return ["one", "two"];
+  return ["three"];
+}
+
+function getWorkflowNextOutPort(id) {
+  const usedPorts = new Set(workflowState.edges.filter((edge) => edge.from === id).map((edge) => edge.fromPort));
+  return getWorkflowOutPorts(id).find((port) => !usedPorts.has(port)) || "";
+}
+
+function addWorkflowNode(kind, position) {
+  const config = workflowNodeKinds[kind] || { type: "custom", title: kind || "自定义节点", fields: ["输入内容"] };
+  const id = `custom-${Date.now()}-${workflowState.addedNodes.length}`;
+  const previous = getWorkflowLastNodeId();
+  const previousPosition = getWorkflowNodePosition(previous);
+  const nextPosition = position || { x: previousPosition.x + 360, y: previousPosition.y + 20 };
+  const node = {
+    id,
+    title: config.title,
+    type: config.type,
+    tone: config.tone || "red",
+    fields: config.fields || ["输入内容"],
+    position: nextPosition,
+  };
+  workflowState.addedNodes.push(node);
+  workflowState.nodePositions[id] = nextPosition;
+  const fromPort = getWorkflowNextOutPort(previous);
+  if (fromPort) workflowState.edges.push({ from: previous, fromPort, to: id, toPort: "one" });
+  workflowState.edges = normalizeWorkflowEdges(workflowState.edges);
+  workflowState.selectedNode = id;
+  workflowState.toast = fromPort ? `已添加节点：${node.title}` : `已添加节点：${node.title}，请选择其他输出点连接`;
+}
+
+function resetWorkflowCanvasState() {
+  workflowState.selectedNode = "";
+  workflowState.suppressNextClick = false;
+  workflowState.addedNodes = [];
+  workflowState.edges = [];
+  workflowState.nodePositions = {
+    input: { x: 210, y: 250 },
+    vision: { x: 560, y: 210 },
+    output: { x: 950, y: 285 },
+  };
+  workflowState.autoFloatPosition = { x: 560, y: 430 };
 }
 
 function resetWorkflowDraft() {
@@ -1988,6 +2219,7 @@ function handleWorkflowClick(event) {
     return;
   }
   if (action === "confirm-create") {
+    resetWorkflowCanvasState();
     workflowState.activeTitle = workflowState.draft.title.trim() || "图像理解Demo";
     workflowState.mode = "canvas";
     workflowState.canvasMode = "manual";
@@ -2014,12 +2246,12 @@ function handleWorkflowClick(event) {
     workflowState.modal = null;
     workflowState.runOpen = false;
     workflowState.menuId = null;
+    resetWorkflowCanvasState();
     renderWorkflowModule();
     return;
   }
   if (action === "add-node") {
-    workflowState.toast = `已添加节点：${target.dataset.workflowNodeKind || "节点"}`;
-    workflowState.selectedNode = "";
+    addWorkflowNode(target.dataset.workflowNodeKind || "节点");
     renderWorkflowModule();
     return;
   }
@@ -2053,6 +2285,7 @@ function handleWorkflowClick(event) {
   }
   if (action === "open-card") {
     const item = workflowItems.find((entry) => String(entry.id) === target.dataset.workflowId);
+    resetWorkflowCanvasState();
     workflowState.activeTitle = item?.name || "图像理解Demo";
     workflowState.mode = "canvas";
     workflowState.canvasMode = item?.status === "已发布" ? "auto" : "manual";
@@ -2109,6 +2342,12 @@ function handleWorkflowClick(event) {
 }
 
 function handleWorkflowPointerDown(event) {
+  const paletteButton = event.target.closest("[data-workflow-action=\"add-node\"]");
+  if (paletteButton) {
+    startWorkflowPaletteDrag(event, paletteButton);
+    return;
+  }
+
   const node = event.target.closest("[data-workflow-node]");
   const floatButton = event.target.closest("[data-workflow-float]");
   const dragTarget = node || floatButton;
@@ -2157,6 +2396,57 @@ function handleWorkflowPointerDown(event) {
 
   document.addEventListener("pointermove", moveNode);
   document.addEventListener("pointerup", stopDrag);
+}
+
+function startWorkflowPaletteDrag(event, button) {
+  if (event.button !== 0) return;
+  const canvas = document.querySelector("[data-panel=\"workflow\"] .workflow-canvas");
+  if (!canvas) return;
+  const kind = button.dataset.workflowNodeKind || "节点";
+  let hasMoved = false;
+  let ghost = null;
+
+  function moveGhost(moveEvent) {
+    hasMoved = hasMoved || Math.abs(moveEvent.clientX - event.clientX) > 3 || Math.abs(moveEvent.clientY - event.clientY) > 3;
+    if (!hasMoved) return;
+    if (!ghost) {
+      ghost = document.createElement("div");
+      ghost.className = "workflow-drag-ghost";
+      ghost.textContent = kind;
+      document.body.appendChild(ghost);
+    }
+    ghost.style.left = `${moveEvent.clientX + 12}px`;
+    ghost.style.top = `${moveEvent.clientY + 12}px`;
+  }
+
+  function stopPaletteDrag(upEvent) {
+    const canvasRect = canvas.getBoundingClientRect();
+    const insideCanvas =
+      upEvent.clientX >= canvasRect.left &&
+      upEvent.clientX <= canvasRect.right &&
+      upEvent.clientY >= canvasRect.top &&
+      upEvent.clientY <= canvasRect.bottom;
+    ghost?.remove();
+    document.removeEventListener("pointermove", moveGhost);
+    document.removeEventListener("pointerup", stopPaletteDrag);
+    if (!hasMoved) return;
+    if (hasMoved) {
+      workflowState.suppressNextClick = true;
+      window.setTimeout(() => {
+        workflowState.suppressNextClick = false;
+      }, 250);
+    }
+    if (!insideCanvas) return;
+    const position = {
+      x: Math.max(12, Math.round(upEvent.clientX - canvasRect.left + canvas.scrollLeft - 170)),
+      y: Math.max(12, Math.round(upEvent.clientY - canvasRect.top + canvas.scrollTop - 42)),
+    };
+    addWorkflowNode(kind, position);
+    renderWorkflowModule();
+  }
+
+  document.addEventListener("pointermove", moveGhost);
+  document.addEventListener("pointerup", stopPaletteDrag);
 }
 
 const workflowPanel = document.querySelector('[data-panel="workflow"]');
