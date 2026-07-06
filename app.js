@@ -2061,13 +2061,24 @@ function getWorkflowInputPortFromPoint(x, y, excludeNodeId = "") {
   const directPort = document.elementFromPoint(x, y)?.closest(".workflow-port.in");
   const directNode = directPort?.closest("[data-workflow-node]");
   if (directPort && directNode?.dataset.workflowNode !== excludeNodeId) return directPort;
-  return Array.from(document.querySelectorAll(".workflow-port.in")).find((port) => {
+  const nearbyInputPort = Array.from(document.querySelectorAll(".workflow-port.in")).find((port) => {
     const node = port.closest("[data-workflow-node]");
     if (!node || node.dataset.workflowNode === excludeNodeId) return false;
     const rect = port.getBoundingClientRect();
-    const hitPadding = 12;
+    const hitPadding = 18;
     return x >= rect.left - hitPadding && x <= rect.right + hitPadding && y >= rect.top - hitPadding && y <= rect.bottom + hitPadding;
-  }) || null;
+  });
+  if (nearbyInputPort) return nearbyInputPort;
+  const targetNode = document.elementFromPoint(x, y)?.closest("[data-workflow-node]");
+  if (targetNode?.dataset.workflowNode && targetNode.dataset.workflowNode !== excludeNodeId) {
+    return targetNode.querySelector(".workflow-port.in");
+  }
+  return Array.from(document.querySelectorAll("[data-workflow-node]")).find((node) => {
+    if (node.dataset.workflowNode === excludeNodeId) return false;
+    const rect = node.getBoundingClientRect();
+    const hitPadding = 28;
+    return x >= rect.left - hitPadding && x <= rect.right + hitPadding && y >= rect.top - hitPadding && y <= rect.bottom + hitPadding;
+  })?.querySelector(".workflow-port.in") || null;
 }
 
 function workflowBezier(start, end) {
@@ -2250,6 +2261,17 @@ function handleWorkflowPortClick(event, port) {
   if (!nodeId || !portName) return;
 
   if (port.classList.contains("out")) {
+    const pending = workflowState.pendingConnection;
+    if (pending && pending.from !== nodeId) {
+      const inputPort = node.querySelector(".workflow-port.in");
+      const inputPortName = getWorkflowPortName(inputPort);
+      const connected = connectWorkflowNodes(pending.from, pending.fromPort, nodeId, inputPortName);
+      workflowState.pendingConnection = null;
+      workflowState.selectedNode = nodeId;
+      workflowState.toast = connected ? "节点连线已建立" : "该输入点或输出点已有连线";
+      renderWorkflowModule();
+      return;
+    }
     const nextPending = { from: nodeId, fromPort: portName };
     const currentKey = getWorkflowPendingKey();
     workflowState.pendingConnection = currentKey === `${nodeId}:${portName}` ? null : nextPending;
