@@ -1951,7 +1951,7 @@ function getWorkflowVisibleEdges() {
       { from: "vision", fromPort: "three", to: "output", toPort: "one" },
     ]
     : [];
-  if (workflowState.canvasMode === "auto") return autoEdges;
+  if (workflowState.canvasMode === "auto" && workflowState.addedNodes.length === 0) return autoEdges;
   return normalizeWorkflowEdges([...autoEdges, ...workflowState.edges]);
 }
 
@@ -2146,6 +2146,20 @@ function getWorkflowNextOutPort(id) {
   return getWorkflowOutPorts(id).find((port) => !usedPorts.has(port)) || "";
 }
 
+function getWorkflowDropSource(position) {
+  const candidates = getWorkflowConnectableNodes()
+    .map((id) => ({ id, position: getWorkflowNodePosition(id) }))
+    .filter((item) => item.id !== "output" && item.position.x < position.x && getWorkflowNextOutPort(item.id))
+    .sort((a, b) => {
+      const aDx = position.x - a.position.x;
+      const bDx = position.x - b.position.x;
+      const aDy = Math.abs(position.y - a.position.y);
+      const bDy = Math.abs(position.y - b.position.y);
+      return aDx + aDy * 0.35 - (bDx + bDy * 0.35);
+    });
+  return candidates[0]?.id || "";
+}
+
 function connectWorkflowNodes(from, fromPort, to, toPort) {
   if (!from || !to || !fromPort || !toPort || from === to) return false;
   const edge = { from, fromPort, to, toPort };
@@ -2159,10 +2173,10 @@ function connectWorkflowNodes(from, fromPort, to, toPort) {
   return connected;
 }
 
-function addWorkflowNode(kind, position) {
+function addWorkflowNode(kind, position, options = {}) {
   const config = workflowNodeKinds[kind] || { type: "custom", title: kind || "自定义节点", fields: ["输入内容"] };
   const id = `custom-${Date.now()}-${workflowState.addedNodes.length}`;
-  const previous = getWorkflowLastNodeId();
+  const previous = options.previous || (position ? getWorkflowDropSource(position) : "") || getWorkflowLastNodeId();
   const previousPosition = getWorkflowNodePosition(previous);
   const nextPosition = position || { x: previousPosition.x + 360, y: previousPosition.y + 20 };
   const node = {
