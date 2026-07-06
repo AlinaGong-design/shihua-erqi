@@ -15002,7 +15002,8 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
 }
 
 .workflow-port.connecting,
-.workflow-port.connect-target {
+.workflow-port.connect-target,
+.workflow-port.pending {
   transform: scale(1.45);
   box-shadow: 0 0 0 4px rgba(210, 50, 74, 0.18);
 }

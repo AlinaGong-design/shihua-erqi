@@ -1612,6 +1612,7 @@ const workflowState = {
   canvasMode: "manual",
   selectedNode: "",
   suppressNextClick: false,
+  pendingConnection: null,
   addedNodes: [],
   edges: [],
   nodePositions: {
@@ -1680,7 +1681,10 @@ function renderWorkflowModule() {
   if (!root) return;
   if (workflowState.mode === "canvas") ensureWorkflowEdges();
   root.innerHTML = workflowState.mode === "canvas" ? renderWorkflowCanvas() : renderWorkflowList();
-  if (workflowState.mode === "canvas") requestAnimationFrame(updateWorkflowLines);
+  if (workflowState.mode === "canvas") requestAnimationFrame(() => {
+    updateWorkflowLines();
+    updateWorkflowPendingPortClass();
+  });
 }
 
 function renderWorkflowList() {
@@ -1882,7 +1886,7 @@ function renderWorkflowCanvas() {
         </main>
         ${workflowState.runOpen ? renderWorkflowRunPanel() : ""}
       </div>
-      ${workflowState.toast ? `<div class="workflow-toast">${escapeHtml(workflowState.toast)}</div>` : ""}
+      ${workflowState.toast ? `<div class="workflow-toast" data-workflow-toast="true">${escapeHtml(workflowState.toast)}</div>` : ""}
       ${renderWorkflowAutoModal()}
     </div>
   `;
@@ -1999,6 +2003,34 @@ function getWorkflowEdgeKey(edge) {
 
 function renderWorkflowLinePath(edge) {
   return `<path data-workflow-edge="${getWorkflowEdgeKey(edge)}" data-workflow-from="${edge.from}" data-workflow-from-port="${edge.fromPort || "three"}" data-workflow-to="${edge.to}" data-workflow-to-port="${edge.toPort || "one"}" />`;
+}
+
+function getWorkflowPortName(port) {
+  return port?.dataset.workflowPort || Array.from(port?.classList || []).find((name) => ["one", "two", "three"].includes(name)) || "";
+}
+
+function getWorkflowPendingKey() {
+  const pending = workflowState.pendingConnection;
+  return pending ? `${pending.from}:${pending.fromPort}` : "";
+}
+
+function updateWorkflowPendingPortClass() {
+  document.querySelectorAll(".workflow-port.pending").forEach((port) => port.classList.remove("pending"));
+  const pending = workflowState.pendingConnection;
+  if (!pending) return;
+  document.querySelector(`[data-workflow-node="${pending.from}"] .workflow-port.out.${pending.fromPort}`)?.classList.add("pending");
+}
+
+function showWorkflowToast(message) {
+  workflowState.toast = message;
+  let toast = document.querySelector("[data-workflow-toast]");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "workflow-toast";
+    toast.dataset.workflowToast = "true";
+    document.querySelector("[data-panel=\"workflow\"] .workflow-editor")?.appendChild(toast);
+  }
+  if (toast) toast.textContent = message;
 }
 
 function renderWorkflowAddedNode(item) {
@@ -2199,6 +2231,7 @@ function addWorkflowNode(kind, position, options = {}) {
 function resetWorkflowCanvasState() {
   workflowState.selectedNode = "";
   workflowState.suppressNextClick = false;
+  workflowState.pendingConnection = null;
   workflowState.addedNodes = [];
   workflowState.edges = [];
   workflowState.nodePositions = {
@@ -2213,7 +2246,45 @@ function resetWorkflowDraft() {
   workflowState.draft = { title: "", name: "", desc: "", import: false };
 }
 
+function handleWorkflowPortClick(event, port) {
+  event.preventDefault();
+  event.stopPropagation();
+  const node = port.closest("[data-workflow-node]");
+  const nodeId = node?.dataset.workflowNode || "";
+  const portName = getWorkflowPortName(port);
+  if (!nodeId || !portName) return;
+
+  if (port.classList.contains("out")) {
+    const nextPending = { from: nodeId, fromPort: portName };
+    const currentKey = getWorkflowPendingKey();
+    workflowState.pendingConnection = currentKey === `${nodeId}:${portName}` ? null : nextPending;
+    workflowState.selectedNode = nodeId;
+    updateWorkflowPendingPortClass();
+    showWorkflowToast(workflowState.pendingConnection ? "请选择要连接的输入点" : "已取消连线");
+    return;
+  }
+
+  if (port.classList.contains("in")) {
+    const pending = workflowState.pendingConnection;
+    if (!pending) {
+      showWorkflowToast("请先选择输出点");
+      return;
+    }
+    const connected = connectWorkflowNodes(pending.from, pending.fromPort, nodeId, portName);
+    workflowState.pendingConnection = null;
+    workflowState.selectedNode = nodeId;
+    workflowState.toast = connected ? "节点连线已建立" : "该输入点或输出点已有连线";
+    renderWorkflowModule();
+  }
+}
+
 function handleWorkflowClick(event) {
+  const portTarget = event.target.closest(".workflow-port");
+  if (portTarget) {
+    handleWorkflowPortClick(event, portTarget);
+    return;
+  }
+
   const nodeTarget = event.target.closest("[data-workflow-node]");
   const target = event.target.closest("button");
   if (workflowState.suppressNextClick) {
@@ -2477,6 +2548,7 @@ function startWorkflowConnectionDrag(event, port) {
   const start = getWorkflowPortPoint(canvas, from, fromPort, "out");
   if (!start) return;
   let activeTarget = null;
+  let hasMoved = false;
   port.classList.add("connecting");
 
   function setActiveTarget(target) {
@@ -2487,6 +2559,8 @@ function startWorkflowConnectionDrag(event, port) {
   }
 
   function moveConnection(moveEvent) {
+    hasMoved = hasMoved || Math.abs(moveEvent.clientX - event.clientX) > 4 || Math.abs(moveEvent.clientY - event.clientY) > 4;
+    if (!hasMoved) return;
     const targetPort = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(".workflow-port.in");
     const targetNode = targetPort?.closest("[data-workflow-node]");
     setActiveTarget(targetPort && targetNode?.dataset.workflowNode !== from ? targetPort : null);
@@ -2494,26 +2568,27 @@ function startWorkflowConnectionDrag(event, port) {
   }
 
   function stopConnection(upEvent) {
+    port.classList.remove("connecting");
+    setActiveTarget(null);
+    clearWorkflowDraftLine(canvas);
+    document.removeEventListener("pointermove", moveConnection);
+    document.removeEventListener("pointerup", stopConnection);
+    if (!hasMoved) return;
     const targetPort = document.elementFromPoint(upEvent.clientX, upEvent.clientY)?.closest(".workflow-port.in");
     const targetNode = targetPort?.closest("[data-workflow-node]");
     const to = targetNode?.dataset.workflowNode;
     const toPort = targetPort?.dataset.workflowPort || (targetPort ? Array.from(targetPort.classList).find((name) => ["one", "two", "three"].includes(name)) : "");
     const connected = connectWorkflowNodes(from, fromPort, to, toPort);
-    port.classList.remove("connecting");
-    setActiveTarget(null);
-    clearWorkflowDraftLine(canvas);
     if (connected) {
+      workflowState.pendingConnection = null;
       workflowState.toast = "节点连线已建立";
       renderWorkflowModule();
     } else {
       workflowState.toast = to && to !== from ? "该输出点已有连线" : "请连接到其他节点的输入点";
       renderWorkflowModule();
     }
-    document.removeEventListener("pointermove", moveConnection);
-    document.removeEventListener("pointerup", stopConnection);
   }
 
-  updateWorkflowDraftLine(canvas, start, getWorkflowPointFromEvent(canvas, event));
   document.addEventListener("pointermove", moveConnection);
   document.addEventListener("pointerup", stopConnection);
 }
