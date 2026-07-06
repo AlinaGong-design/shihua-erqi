@@ -1914,7 +1914,7 @@ function renderWorkflowCanvasNodes() {
         <label>zfbb <b>图片</b><input placeholder="请在试运行内上传文件" /></label>
         <button>添加输入</button>
       </div>
-      <i class="workflow-port out one"></i><i class="workflow-port out two"></i>
+      <i class="workflow-port out one" data-workflow-port="one" data-workflow-port-side="out"></i><i class="workflow-port out two" data-workflow-port="two" data-workflow-port-side="out"></i>
     </div>
     ${renderWorkflowLines()}
     ${auto ? `
@@ -1927,7 +1927,7 @@ function renderWorkflowCanvasNodes() {
           <label>图片<input placeholder="请在试运行内上传文件" /></label>
           <button>输出</button>
         </div>
-        <i class="workflow-port in one"></i><i class="workflow-port in two"></i><i class="workflow-port out three"></i>
+        <i class="workflow-port in one" data-workflow-port="one" data-workflow-port-side="in"></i><i class="workflow-port in two" data-workflow-port="two" data-workflow-port-side="in"></i><i class="workflow-port out three" data-workflow-port="three" data-workflow-port-side="out"></i>
       </div>
       <div class="workflow-node output success ${workflowState.selectedNode === "output" ? "selected" : ""}" data-workflow-node="output" style="--x:${positions.output.x}px;--y:${positions.output.y}px">
         <div class="workflow-node-status">● 运行成功 <span>0.0s</span><button data-workflow-action="node-result">展开运行结果</button></div>
@@ -1935,7 +1935,7 @@ function renderWorkflowCanvasNodes() {
         <div class="workflow-node-body">
           <label>文本内容<textarea></textarea></label>
         </div>
-        <i class="workflow-port in one"></i><i class="workflow-port out three"></i>
+        <i class="workflow-port in one" data-workflow-port="one" data-workflow-port-side="in"></i><i class="workflow-port out three" data-workflow-port="three" data-workflow-port-side="out"></i>
       </div>
     ` : ""}
     ${workflowState.addedNodes.map(renderWorkflowAddedNode).join("")}
@@ -1970,13 +1970,16 @@ function ensureWorkflowEdges() {
 function normalizeWorkflowEdges(edges) {
   const seenPairs = new Set();
   const usedPorts = new Set();
+  const usedInputs = new Set();
   return edges.filter((edge) => {
     if (!edge.from || !edge.to || !edge.fromPort || !edge.toPort || edge.from === edge.to) return false;
     const pairKey = `${edge.from}->${edge.to}`;
     const portKey = `${edge.from}:${edge.fromPort}`;
-    if (seenPairs.has(pairKey) || usedPorts.has(portKey)) return false;
+    const inputKey = `${edge.to}:${edge.toPort}`;
+    if (seenPairs.has(pairKey) || usedPorts.has(portKey) || usedInputs.has(inputKey)) return false;
     seenPairs.add(pairKey);
     usedPorts.add(portKey);
+    usedInputs.add(inputKey);
     return true;
   });
 }
@@ -2009,14 +2012,14 @@ function renderWorkflowAddedNode(item) {
         ${fields.map((field) => `<label>${escapeHtml(field)}<textarea placeholder="点击配置"></textarea></label>`).join("")}
         <button>输出</button>
       </div>
-      <i class="workflow-port in one"></i><i class="workflow-port out three"></i>
+      <i class="workflow-port in one" data-workflow-port="one" data-workflow-port-side="in"></i><i class="workflow-port out three" data-workflow-port="three" data-workflow-port-side="out"></i>
     </div>
   `;
 }
 
 function getWorkflowPortPoint(canvas, nodeName, portName, side) {
   const node = canvas.querySelector(`[data-workflow-node="${nodeName}"]`);
-  const port = node?.querySelector(`.workflow-port.${portName}`);
+  const port = node?.querySelector(`.workflow-port.${side}.${portName}`);
   if (!node || !port) return null;
   const nodeRect = node.getBoundingClientRect();
   const canvasRect = canvas.getBoundingClientRect();
@@ -2026,6 +2029,14 @@ function getWorkflowPortPoint(canvas, nodeName, portName, side) {
     ? nodeRect.right - canvasRect.left + canvas.scrollLeft
     : nodeRect.left - canvasRect.left + canvas.scrollLeft;
   return { x, y: portCenterY };
+}
+
+function getWorkflowPointFromEvent(canvas, event) {
+  const canvasRect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - canvasRect.left + canvas.scrollLeft,
+    y: event.clientY - canvasRect.top + canvas.scrollTop,
+  };
 }
 
 function workflowBezier(start, end) {
@@ -2053,6 +2064,28 @@ function updateWorkflowLines() {
       path.setAttribute("hidden", "true");
     }
   });
+}
+
+function updateWorkflowDraftLine(canvas, start, end) {
+  const svg = canvas.querySelector(".workflow-lines");
+  if (!svg) return;
+  const width = Math.max(canvas.scrollWidth, canvas.clientWidth, 1340);
+  const height = Math.max(canvas.scrollHeight, canvas.clientHeight, 720);
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(height));
+  let draft = svg.querySelector("[data-workflow-draft-line]");
+  if (!draft) {
+    draft = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    draft.dataset.workflowDraftLine = "true";
+    draft.classList.add("draft");
+    svg.appendChild(draft);
+  }
+  draft.setAttribute("d", workflowBezier(start, end));
+}
+
+function clearWorkflowDraftLine(canvas) {
+  canvas.querySelector("[data-workflow-draft-line]")?.remove();
 }
 
 function syncWorkflowLinePaths(svg) {
@@ -2111,6 +2144,19 @@ function getWorkflowOutPorts(id) {
 function getWorkflowNextOutPort(id) {
   const usedPorts = new Set(workflowState.edges.filter((edge) => edge.from === id).map((edge) => edge.fromPort));
   return getWorkflowOutPorts(id).find((port) => !usedPorts.has(port)) || "";
+}
+
+function connectWorkflowNodes(from, fromPort, to, toPort) {
+  if (!from || !to || !fromPort || !toPort || from === to) return false;
+  const edge = { from, fromPort, to, toPort };
+  const nextEdges = normalizeWorkflowEdges([
+    ...workflowState.edges.filter((item) => (item.from !== from || item.fromPort !== fromPort) && (item.to !== to || item.toPort !== toPort)),
+    edge,
+  ]);
+  const edgeKey = getWorkflowEdgeKey(edge);
+  const connected = nextEdges.some((item) => getWorkflowEdgeKey(item) === edgeKey);
+  workflowState.edges = nextEdges;
+  return connected;
 }
 
 function addWorkflowNode(kind, position) {
@@ -2348,10 +2394,16 @@ function handleWorkflowPointerDown(event) {
     return;
   }
 
+  const outputPort = event.target.closest(".workflow-port.out");
+  if (outputPort) {
+    startWorkflowConnectionDrag(event, outputPort);
+    return;
+  }
+
   const node = event.target.closest("[data-workflow-node]");
   const floatButton = event.target.closest("[data-workflow-float]");
   const dragTarget = node || floatButton;
-  if (!dragTarget || (node && event.target.closest("input, textarea, select, button"))) return;
+  if (!dragTarget || (node && event.target.closest("input, textarea, select, button, .workflow-port"))) return;
   const canvas = dragTarget.closest(".workflow-canvas");
   if (!canvas) return;
   event.preventDefault();
@@ -2396,6 +2448,60 @@ function handleWorkflowPointerDown(event) {
 
   document.addEventListener("pointermove", moveNode);
   document.addEventListener("pointerup", stopDrag);
+}
+
+function startWorkflowConnectionDrag(event, port) {
+  if (event.button !== 0) return;
+  const fromNode = port.closest("[data-workflow-node]");
+  const canvas = port.closest(".workflow-canvas");
+  const from = fromNode?.dataset.workflowNode;
+  const fromPort = port.dataset.workflowPort || Array.from(port.classList).find((name) => ["one", "two", "three"].includes(name));
+  if (!canvas || !from || !fromPort) return;
+  event.preventDefault();
+  event.stopPropagation();
+  workflowState.selectedNode = from;
+  const start = getWorkflowPortPoint(canvas, from, fromPort, "out");
+  if (!start) return;
+  let activeTarget = null;
+  port.classList.add("connecting");
+
+  function setActiveTarget(target) {
+    if (activeTarget === target) return;
+    activeTarget?.classList.remove("connect-target");
+    activeTarget = target;
+    activeTarget?.classList.add("connect-target");
+  }
+
+  function moveConnection(moveEvent) {
+    const targetPort = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(".workflow-port.in");
+    const targetNode = targetPort?.closest("[data-workflow-node]");
+    setActiveTarget(targetPort && targetNode?.dataset.workflowNode !== from ? targetPort : null);
+    updateWorkflowDraftLine(canvas, start, getWorkflowPointFromEvent(canvas, moveEvent));
+  }
+
+  function stopConnection(upEvent) {
+    const targetPort = document.elementFromPoint(upEvent.clientX, upEvent.clientY)?.closest(".workflow-port.in");
+    const targetNode = targetPort?.closest("[data-workflow-node]");
+    const to = targetNode?.dataset.workflowNode;
+    const toPort = targetPort?.dataset.workflowPort || (targetPort ? Array.from(targetPort.classList).find((name) => ["one", "two", "three"].includes(name)) : "");
+    const connected = connectWorkflowNodes(from, fromPort, to, toPort);
+    port.classList.remove("connecting");
+    setActiveTarget(null);
+    clearWorkflowDraftLine(canvas);
+    if (connected) {
+      workflowState.toast = "节点连线已建立";
+      renderWorkflowModule();
+    } else {
+      workflowState.toast = to && to !== from ? "该输出点已有连线" : "请连接到其他节点的输入点";
+      renderWorkflowModule();
+    }
+    document.removeEventListener("pointermove", moveConnection);
+    document.removeEventListener("pointerup", stopConnection);
+  }
+
+  updateWorkflowDraftLine(canvas, start, getWorkflowPointFromEvent(canvas, event));
+  document.addEventListener("pointermove", moveConnection);
+  document.addEventListener("pointerup", stopConnection);
 }
 
 function startWorkflowPaletteDrag(event, button) {

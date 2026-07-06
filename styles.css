@@ -14994,6 +14994,25 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   z-index: 2;
 }
 
+.workflow-port {
+  z-index: 4;
+  cursor: crosshair;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(210, 50, 74, 0.35);
+}
+
+.workflow-port.connecting,
+.workflow-port.connect-target {
+  transform: scale(1.45);
+  box-shadow: 0 0 0 4px rgba(210, 50, 74, 0.18);
+}
+
+.workflow-lines path.draft {
+  stroke-dasharray: 8 7;
+  stroke-width: 2.5;
+  opacity: 0.85;
+}
+
 .workflow-node-palette,
 .workflow-node-palette button,
 .workflow-palette-head strong,
