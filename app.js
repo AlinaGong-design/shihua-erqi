@@ -2057,6 +2057,19 @@ function getWorkflowPointFromEvent(canvas, event) {
   };
 }
 
+function getWorkflowInputPortFromPoint(x, y, excludeNodeId = "") {
+  const directPort = document.elementFromPoint(x, y)?.closest(".workflow-port.in");
+  const directNode = directPort?.closest("[data-workflow-node]");
+  if (directPort && directNode?.dataset.workflowNode !== excludeNodeId) return directPort;
+  return Array.from(document.querySelectorAll(".workflow-port.in")).find((port) => {
+    const node = port.closest("[data-workflow-node]");
+    if (!node || node.dataset.workflowNode === excludeNodeId) return false;
+    const rect = port.getBoundingClientRect();
+    const hitPadding = 12;
+    return x >= rect.left - hitPadding && x <= rect.right + hitPadding && y >= rect.top - hitPadding && y <= rect.bottom + hitPadding;
+  }) || null;
+}
+
 function workflowBezier(start, end) {
   const dx = Math.max(72, Math.abs(end.x - start.x) * 0.46);
   return `M${Math.round(start.x)} ${Math.round(start.y)} C${Math.round(start.x + dx)} ${Math.round(start.y)}, ${Math.round(end.x - dx)} ${Math.round(end.y)}, ${Math.round(end.x)} ${Math.round(end.y)}`;
@@ -2256,6 +2269,7 @@ function handleWorkflowPortClick(event, port) {
     workflowState.pendingConnection = null;
     workflowState.selectedNode = nodeId;
     workflowState.toast = connected ? "节点连线已建立" : "该输入点或输出点已有连线";
+    if (connected) updateWorkflowLines();
     renderWorkflowModule();
   }
 }
@@ -2543,7 +2557,7 @@ function startWorkflowConnectionDrag(event, port) {
   function moveConnection(moveEvent) {
     hasMoved = hasMoved || Math.abs(moveEvent.clientX - event.clientX) > 4 || Math.abs(moveEvent.clientY - event.clientY) > 4;
     if (!hasMoved) return;
-    const targetPort = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(".workflow-port.in");
+    const targetPort = getWorkflowInputPortFromPoint(moveEvent.clientX, moveEvent.clientY, from);
     const targetNode = targetPort?.closest("[data-workflow-node]");
     setActiveTarget(targetPort && targetNode?.dataset.workflowNode !== from ? targetPort : null);
     updateWorkflowDraftLine(canvas, start, getWorkflowPointFromEvent(canvas, moveEvent));
@@ -2556,7 +2570,7 @@ function startWorkflowConnectionDrag(event, port) {
     document.removeEventListener("pointermove", moveConnection);
     document.removeEventListener("pointerup", stopConnection);
     if (!hasMoved) return;
-    const targetPort = document.elementFromPoint(upEvent.clientX, upEvent.clientY)?.closest(".workflow-port.in");
+    const targetPort = getWorkflowInputPortFromPoint(upEvent.clientX, upEvent.clientY, from);
     const targetNode = targetPort?.closest("[data-workflow-node]");
     const to = targetNode?.dataset.workflowNode;
     const toPort = targetPort?.dataset.workflowPort || (targetPort ? Array.from(targetPort.classList).find((name) => ["one", "two", "three"].includes(name)) : "");
