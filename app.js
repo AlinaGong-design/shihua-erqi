@@ -1679,7 +1679,6 @@ function getVisibleWorkflowItems() {
 function renderWorkflowModule() {
   const root = document.querySelector("[data-workflow-root]");
   if (!root) return;
-  if (workflowState.mode === "canvas") ensureWorkflowEdges();
   root.innerHTML = workflowState.mode === "canvas" ? renderWorkflowCanvas() : renderWorkflowList();
   if (workflowState.mode === "canvas") requestAnimationFrame(() => {
     updateWorkflowLines();
@@ -1948,7 +1947,6 @@ function renderWorkflowCanvasNodes() {
 }
 
 function getWorkflowVisibleEdges() {
-  ensureWorkflowEdges();
   const autoEdges = workflowState.canvasMode === "auto"
     ? [
       { from: "input", fromPort: "one", to: "vision", toPort: "one" },
@@ -1957,18 +1955,6 @@ function getWorkflowVisibleEdges() {
     : [];
   if (workflowState.canvasMode === "auto" && workflowState.addedNodes.length === 0) return autoEdges;
   return normalizeWorkflowEdges([...autoEdges, ...workflowState.edges]);
-}
-
-function ensureWorkflowEdges() {
-  if (workflowState.edges.length > 0 || workflowState.addedNodes.length === 0) return;
-  const orderedNodes = ["input", ...workflowState.addedNodes.map((item) => item.id)]
-    .sort((a, b) => getWorkflowNodePosition(a).x - getWorkflowNodePosition(b).x);
-  workflowState.edges = orderedNodes.slice(1).reduce((edges, nodeId, index) => {
-    const from = orderedNodes[index];
-    const fromPort = getWorkflowNextOutPort(from);
-    if (fromPort) edges.push({ from, fromPort, to: nodeId, toPort: "one" });
-    return edges;
-  }, []);
 }
 
 function normalizeWorkflowEdges(edges) {
@@ -2121,7 +2107,6 @@ function clearWorkflowDraftLine(canvas) {
 }
 
 function syncWorkflowLinePaths(svg) {
-  ensureWorkflowEdges();
   const edges = getWorkflowVisibleEdges();
   const currentKeys = Array.from(svg.querySelectorAll("path")).map((path) => path.dataset.workflowEdge).join("|");
   const nextKeys = edges.map(getWorkflowEdgeKey).join("|");
@@ -2221,11 +2206,8 @@ function addWorkflowNode(kind, position, options = {}) {
   };
   workflowState.addedNodes.push(node);
   workflowState.nodePositions[id] = nextPosition;
-  const fromPort = getWorkflowNextOutPort(previous);
-  if (fromPort) workflowState.edges.push({ from: previous, fromPort, to: id, toPort: "one" });
-  workflowState.edges = normalizeWorkflowEdges(workflowState.edges);
   workflowState.selectedNode = id;
-  workflowState.toast = fromPort ? `已添加节点：${node.title}` : `已添加节点：${node.title}，请选择其他输出点连接`;
+  workflowState.toast = `已添加节点：${node.title}，请点击小红点连接`;
 }
 
 function resetWorkflowCanvasState() {
