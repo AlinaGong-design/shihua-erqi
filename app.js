@@ -6481,6 +6481,9 @@ const monitorState = {
   comparison: "同比",
   autoRefresh: true,
   activeWorkflowMetric: "workflow",
+  drillOpen: false,
+  drillMode: "summary",
+  drillRow: 0,
   exportMessage: "",
 };
 
@@ -6596,6 +6599,33 @@ const monitorWorkflowDrillRows = [
   ["MCP检索工具链", "孙嘉琦", "MCP", "196", "94.9%", "2.4s", "13.5K", "查看明细"],
 ];
 
+const monitorDrillDetails = [
+  {
+    summary: ["触发次数 342", "失败 6 次", "峰值时段 10:00-12:00", "平均成本 1.82 元"],
+    flow: ["输入校验", "合同条款抽取", "知识库检索", "风险规则判断", "结果生成"],
+    failures: [["知识库超时", 3], ["字段缺失", 2], ["模型重试", 1]],
+    records: [["10:32:18", "王超", "成功", "1.4s", "82 Token"], ["10:28:04", "王超", "成功", "1.7s", "94 Token"], ["09:58:41", "刘颖", "失败", "3.2s", "41 Token"]],
+  },
+  {
+    summary: ["触发次数 286", "失败 10 次", "峰值时段 14:00-16:00", "平均成本 2.16 元"],
+    flow: ["文件解析", "招标要点识别", "投标响应比对", "差异定位", "报告输出"],
+    failures: [["文件解析失败", 4], ["规则未命中", 3], ["模型重试", 3]],
+    records: [["15:21:09", "肖扬", "成功", "2.0s", "126 Token"], ["14:46:33", "肖扬", "失败", "3.8s", "58 Token"], ["13:17:52", "孙嘉琦", "成功", "1.9s", "117 Token"]],
+  },
+  {
+    summary: ["触发次数 248", "失败 5 次", "峰值时段 09:00-11:00", "平均成本 1.28 元"],
+    flow: ["问题改写", "知识库召回", "片段重排", "答案生成", "引用校验"],
+    failures: [["无召回结果", 2], ["引用缺失", 2], ["模型重试", 1]],
+    records: [["10:05:16", "刘颖", "成功", "1.1s", "73 Token"], ["09:42:50", "袁祥清", "成功", "1.3s", "85 Token"], ["09:18:27", "刘颖", "失败", "2.6s", "36 Token"]],
+  },
+  {
+    summary: ["触发次数 196", "失败 10 次", "峰值时段 16:00-18:00", "平均成本 1.46 元"],
+    flow: ["参数组装", "MCP工具调用", "结果清洗", "异常重试", "结构化返回"],
+    failures: [["工具超时", 5], ["权限不足", 3], ["参数错误", 2]],
+    records: [["17:24:08", "孙嘉琦", "成功", "2.3s", "64 Token"], ["16:57:19", "王超", "失败", "4.1s", "28 Token"], ["16:16:40", "孙嘉琦", "成功", "2.0s", "61 Token"]],
+  },
+];
+
 const monitorCharts = {
   tools: {
     title: "自定义工具占比",
@@ -6692,6 +6722,7 @@ function renderMonitoringModule() {
       </div>
 
       ${renderUnifiedMonitoringContent()}
+      ${monitorState.drillOpen ? renderMonitorDrillDrawer() : ""}
     </div>
   `;
 }
@@ -6737,7 +6768,7 @@ function renderUnifiedMonitoringContent() {
         <h2>监控面板</h2>
         <div class="monitor-inline-actions">
           <button class="active">仪表盘</button>
-          <button data-monitor-action="drill">数据钻取</button>
+          <button data-monitor-action="drill-summary">数据钻取</button>
           <button data-monitor-action="export">导出报表</button>
         </div>
       </div>
@@ -6890,14 +6921,106 @@ function renderWorkflowDrillTable() {
           </tr>
         </thead>
         <tbody>
-          ${monitorWorkflowDrillRows.map((row) => `
+          ${monitorWorkflowDrillRows.map((row, rowIndex) => `
             <tr>
-              ${row.map((cell, index) => index === row.length - 1 ? `<td><button data-monitor-action="drill">${escapeHtml(cell)}</button></td>` : `<td>${escapeHtml(cell)}</td>`).join("")}
+              ${row.map((cell, index) => index === row.length - 1 ? `<td><button data-monitor-action="drill-row" data-monitor-row="${rowIndex}">${escapeHtml(cell)}</button></td>` : `<td>${escapeHtml(cell)}</td>`).join("")}
             </tr>
           `).join("")}
         </tbody>
       </table>
     </article>
+  `;
+}
+
+function renderMonitorDrillDrawer() {
+  const isSummary = monitorState.drillMode === "summary";
+  const row = monitorWorkflowDrillRows[monitorState.drillRow] || monitorWorkflowDrillRows[0];
+  const detail = monitorDrillDetails[monitorState.drillRow] || monitorDrillDetails[0];
+  const title = isSummary ? "数据钻取总览" : `${row[0]} 明细`;
+  const summaryItems = isSummary
+    ? [`当前维度 ${monitorState.comparison}`, `资源数 ${monitorWorkflowDrillRows.length}`, `总调用 ${monitorWorkflowDrillRows.reduce((sum, item) => sum + Number(item[3]), 0)}`, `Token 76.4K`]
+    : detail.summary;
+  return `
+    <div class="monitor-drill-backdrop" data-monitor-action="close-drill">
+      <aside class="monitor-drill-drawer" role="dialog" aria-modal="true" aria-label="${escapeHtml(title)}">
+        <div class="monitor-drill-head">
+          <div>
+            <span>${isSummary ? "监控面板" : escapeHtml(row[2])}</span>
+            <h2>${escapeHtml(title)}</h2>
+          </div>
+          <button data-monitor-action="close-drill" aria-label="关闭">×</button>
+        </div>
+        <div class="monitor-drill-summary">
+          ${summaryItems.map((item) => {
+            const [label, ...value] = item.split(" ");
+            return `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value.join(" ") || label)}</strong></div>`;
+          }).join("")}
+        </div>
+        ${isSummary ? renderMonitorSummaryDrillContent() : renderMonitorRowDrillContent(row, detail)}
+      </aside>
+    </div>
+  `;
+}
+
+function renderMonitorSummaryDrillContent() {
+  const totalCalls = monitorWorkflowDrillRows.reduce((sum, row) => sum + Number(row[3]), 0);
+  return `
+    <section class="monitor-drill-section">
+      <h3>模块钻取</h3>
+      <div class="monitor-drill-bars">
+        ${monitorWorkflowDrillRows.map((row) => `
+          <button data-monitor-action="drill-row" data-monitor-row="${monitorWorkflowDrillRows.indexOf(row)}">
+            <span>${escapeHtml(row[0])}</span>
+            <i><b style="width:${Math.round((Number(row[3]) / totalCalls) * 100)}%"></b></i>
+            <strong>${escapeHtml(row[3])}</strong>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+    <section class="monitor-drill-section">
+      <h3>钻取维度</h3>
+      <div class="monitor-drill-tags">
+        <span>按模块</span><span>按用户</span><span>按时间</span><span>按失败原因</span><span>按Token成本</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderMonitorRowDrillContent(row, detail) {
+  const maxFailure = Math.max(...detail.failures.map((item) => item[1]));
+  return `
+    <section class="monitor-drill-section">
+      <h3>调用链路</h3>
+      <div class="monitor-drill-flow">
+        ${detail.flow.map((step, index) => `<span>${index + 1}. ${escapeHtml(step)}</span>`).join("")}
+      </div>
+    </section>
+    <section class="monitor-drill-section">
+      <h3>失败原因分布</h3>
+      <div class="monitor-drill-bars">
+        ${detail.failures.map((item) => `
+          <div>
+            <span>${escapeHtml(item[0])}</span>
+            <i><b style="width:${Math.round((item[1] / maxFailure) * 100)}%"></b></i>
+            <strong>${item[1]}</strong>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+    <section class="monitor-drill-section">
+      <h3>最近调用记录</h3>
+      <table class="monitor-drill-mini-table">
+        <tbody>
+          ${detail.records.map((record) => `<tr>${record.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </section>
+    <section class="monitor-drill-section">
+      <h3>成本拆分</h3>
+      <div class="monitor-drill-tags">
+        <span>调用次数 ${escapeHtml(row[3])}</span><span>成功率 ${escapeHtml(row[4])}</span><span>平均耗时 ${escapeHtml(row[5])}</span><span>Token ${escapeHtml(row[6])}</span>
+      </div>
+    </section>
   `;
 }
 
@@ -7030,19 +7153,44 @@ function resetMonitorFilters() {
 const monitorPanel = document.querySelector('[data-panel="monitoring"]');
 if (monitorPanel) {
   monitorPanel.addEventListener("click", (event) => {
-    const target = event.target.closest("button");
+    const target = event.target.closest("[data-monitor-action]");
+    const action = target?.dataset.monitorAction;
+    if (event.target.closest(".monitor-drill-drawer") && !target) return;
+    if (event.target.closest(".monitor-drill-drawer") && action !== "close-drill" && action !== "drill-row") {
+      event.stopPropagation();
+    }
     if (!target) return;
-    if (target.dataset.monitorAction === "reset") {
+    if (action === "reset") {
       resetMonitorFilters();
       renderMonitoringModule();
       return;
     }
-    if (target.dataset.monitorAction === "export") {
+    if (action === "export") {
       monitorState.exportMessage = "已导出";
       renderMonitoringModule();
       return;
     }
-    if (target.dataset.monitorAction === "toggle-refresh") {
+    if (action === "close-drill") {
+      monitorState.drillOpen = false;
+      renderMonitoringModule();
+      return;
+    }
+    if (action === "drill-summary") {
+      monitorState.drillOpen = true;
+      monitorState.drillMode = "summary";
+      monitorState.exportMessage = "";
+      renderMonitoringModule();
+      return;
+    }
+    if (action === "drill-row") {
+      monitorState.drillOpen = true;
+      monitorState.drillMode = "row";
+      monitorState.drillRow = Number(target.dataset.monitorRow || 0);
+      monitorState.exportMessage = "";
+      renderMonitoringModule();
+      return;
+    }
+    if (action === "toggle-refresh") {
       monitorState.autoRefresh = !monitorState.autoRefresh;
       renderMonitoringModule();
       return;
@@ -7056,10 +7204,6 @@ if (monitorPanel) {
       monitorState.activeWorkflowMetric = target.dataset.monitorMetric;
       renderMonitoringModule();
       return;
-    }
-    if (target.dataset.monitorAction === "drill") {
-      monitorState.exportMessage = "已钻取";
-      renderMonitoringModule();
     }
   });
 

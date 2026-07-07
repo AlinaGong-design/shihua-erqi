@@ -14224,6 +14224,167 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   padding: 0;
 }
 
+.monitor-drill-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(28, 31, 39, 0.28);
+}
+
+.monitor-drill-drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  background: #fff;
+  box-shadow: -14px 0 28px rgba(36, 38, 51, 0.16);
+}
+
+.monitor-drill-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #f0e8e8;
+  background: #fff;
+  padding: 18px 20px;
+}
+
+.monitor-drill-head span {
+  color: #8a8a8a;
+  font-size: 12px;
+}
+
+.monitor-drill-head h2 {
+  margin: 6px 0 0;
+  color: #242633;
+  font-size: 18px;
+}
+
+.monitor-drill-head button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ead6d6;
+  border-radius: 6px;
+  background: #fff;
+  color: #555;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.monitor-drill-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 20px 4px;
+}
+
+.monitor-drill-summary div {
+  border: 1px solid #f0e6e6;
+  border-radius: 8px;
+  background: #fff7f7;
+  padding: 12px;
+}
+
+.monitor-drill-summary span,
+.monitor-drill-section h3 {
+  color: #777;
+  font-size: 12px;
+}
+
+.monitor-drill-summary strong {
+  display: block;
+  margin-top: 8px;
+  color: #242633;
+  font-size: 18px;
+}
+
+.monitor-drill-section {
+  padding: 16px 20px 0;
+}
+
+.monitor-drill-section h3 {
+  margin: 0 0 12px;
+  color: #333;
+  font-size: 14px;
+}
+
+.monitor-drill-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.monitor-drill-bars div,
+.monitor-drill-bars button {
+  display: grid;
+  grid-template-columns: 138px 1fr 52px;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: #555;
+  padding: 0;
+  text-align: left;
+  font-size: 12px;
+}
+
+.monitor-drill-bars i {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f1eeee;
+}
+
+.monitor-drill-bars b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ed1b24 0%, #f39a35 100%);
+}
+
+.monitor-drill-bars strong {
+  text-align: right;
+}
+
+.monitor-drill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.monitor-drill-tags span,
+.monitor-drill-flow span {
+  border: 1px solid #f0e6e6;
+  border-radius: 6px;
+  background: #fff;
+  color: #555;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.monitor-drill-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.monitor-drill-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monitor-drill-mini-table td {
+  border-bottom: 1px solid #f0eeee;
+  color: #444;
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
 @media (max-width: 1400px) {
   .dc-actions {
     width: 100%;
