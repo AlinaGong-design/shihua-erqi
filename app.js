@@ -6510,14 +6510,14 @@ const monitorUsageStats = [
 ];
 
 const monitorWorkflowMetrics = [
-  { id: "agent", label: "智能体调用量", value: 8420, sub: "活跃用户 152", icon: "agent", trend: "+8.4%" },
-  { id: "workflow", label: "工作流调用量", value: 1286, sub: "成功率 96.8%", icon: "flow", trend: "+12.6%" },
-  { id: "skill", label: "Skill调用量", value: 4321, sub: "成功率 98.1%", icon: "tool", trend: "+6.9%" },
-  { id: "mcp", label: "MCP调用量", value: 1320, sub: "工具调用次数", icon: "tool", trend: "+4.2%" },
-  { id: "knowledge", label: "知识库指标", value: 2689, sub: "文档 114 / 检索", icon: "book", trend: "+9.3%" },
-  { id: "token", label: "Token消耗", value: "86.4K", sub: "成本 12,860元", icon: "cost", trend: "-3.5%" },
-  { id: "duration", label: "平均耗时", value: "1.8s", sub: "较昨日 -0.2s", icon: "clock", trend: "更优" },
-  { id: "failure", label: "失败率统计", value: "3.2%", sub: "失败原因 6 类", icon: "warning", trend: "-0.7%" },
+  { id: "agent", label: "智能体调用量", value: 8420, sub: "活跃用户 152", icon: "agent", trend: { "同比": "+8.4%", "环比": "+3.1%" } },
+  { id: "workflow", label: "工作流调用量", value: 1286, sub: "成功率 96.8%", icon: "flow", trend: { "同比": "+12.6%", "环比": "+5.8%" } },
+  { id: "skill", label: "Skill调用量", value: 4321, sub: "成功率 98.1%", icon: "tool", trend: { "同比": "+6.9%", "环比": "+2.4%" } },
+  { id: "mcp", label: "MCP调用量", value: 1320, sub: "工具调用次数", icon: "tool", trend: { "同比": "+4.2%", "环比": "-1.6%" } },
+  { id: "knowledge", label: "知识库指标", value: 2689, sub: "文档 114 / 检索", icon: "book", trend: { "同比": "+9.3%", "环比": "+4.7%" } },
+  { id: "token", label: "Token消耗", value: "86.4K", sub: "成本 12,860元", icon: "cost", trend: { "同比": "-3.5%", "环比": "+6.2%" } },
+  { id: "duration", label: "平均耗时", value: "1.8s", sub: "较昨日 -0.2s", icon: "clock", trend: { "同比": "更优", "环比": "-0.4s" } },
+  { id: "failure", label: "失败率统计", value: "3.2%", sub: "失败原因 6 类", icon: "warning", trend: { "同比": "-0.7%", "环比": "+0.3%" } },
 ];
 
 const monitorWorkflowCreators = [
@@ -6541,6 +6541,53 @@ const monitorWorkflowResources = [
   { label: "知识库检索", value: 16, color: "#32b67a" },
   { label: "MCP工具", value: 10, color: "#7f4ce0" },
 ];
+
+const monitorComparisonData = {
+  "同比": {
+    trendNote: "同比去年同期",
+    trendPoints: {
+      default: "M0 170 C120 132 210 142 330 104 C455 68 570 92 690 70 C812 46 890 64 1000 28",
+      failure: "M0 150 C120 136 210 164 330 138 C470 108 560 126 680 96 C790 70 870 92 1000 54",
+    },
+    resources: [
+      { label: "Token", value: 46, color: "#d7333a" },
+      { label: "计算资源", value: 28, color: "#f39a35" },
+      { label: "知识库检索", value: 16, color: "#32b67a" },
+      { label: "MCP工具", value: 10, color: "#7f4ce0" },
+    ],
+    users: [
+      { name: "王超", value: 2180 },
+      { name: "孙嘉琦", value: 1760 },
+      { name: "袁祥清", value: 1428 },
+      { name: "肖扬", value: 960 },
+      { name: "刘颖", value: 820 },
+    ],
+    costs: ["8,642", "4,218", "3"],
+    tokenTotal: "86.4K Token",
+  },
+  "环比": {
+    trendNote: "环比上一周期",
+    trendPoints: {
+      default: "M0 132 C118 150 230 116 340 128 C455 142 548 86 676 104 C796 122 890 72 1000 86",
+      failure: "M0 92 C120 112 220 104 340 132 C470 154 582 118 700 146 C820 166 900 126 1000 150",
+    },
+    resources: [
+      { label: "Token", value: 39, color: "#d7333a" },
+      { label: "计算资源", value: 33, color: "#f39a35" },
+      { label: "知识库检索", value: 18, color: "#32b67a" },
+      { label: "MCP工具", value: 10, color: "#7f4ce0" },
+    ],
+    users: [
+      { name: "孙嘉琦", value: 1688 },
+      { name: "王超", value: 1516 },
+      { name: "肖扬", value: 1190 },
+      { name: "刘颖", value: 1042 },
+      { name: "袁祥清", value: 986 },
+    ],
+    costs: ["9,184", "4,906", "5"],
+    tokenTotal: "91.7K Token",
+  },
+};
 
 const monitorWorkflowDrillRows = [
   ["合同审核工作流", "王超", "工作流", "342", "98.2%", "1.6s", "24.8K", "查看明细"],
@@ -6711,6 +6758,7 @@ function renderUnifiedMonitoringContent() {
 }
 
 function renderWorkflowMetricCard(item) {
+  const trend = typeof item.trend === "string" ? item.trend : item.trend[monitorState.comparison];
   return `
     <button class="monitor-workflow-metric ${monitorState.activeWorkflowMetric === item.id ? "active" : ""}" data-monitor-metric="${item.id}">
       <span class="monitor-stat-icon ${item.icon}" aria-hidden="true">${getMonitorIcon(item.icon)}</span>
@@ -6719,19 +6767,18 @@ function renderWorkflowMetricCard(item) {
         <strong>${escapeHtml(formatMonitorMetric(item.value))}</strong>
         <small>${escapeHtml(item.sub)}</small>
       </span>
-      <b>${escapeHtml(item.trend)}</b>
+      <b>${escapeHtml(trend)}</b>
     </button>
   `;
 }
 
 function renderWorkflowTrendPanel() {
   const selected = monitorWorkflowMetrics.find((item) => item.id === monitorState.activeWorkflowMetric) || monitorWorkflowMetrics[1];
-  const points = selected.id === "failure"
-    ? "M0 150 C120 136 210 164 330 138 C470 108 560 126 680 96 C790 70 870 92 1000 54"
-    : "M0 170 C120 132 210 142 330 104 C455 68 570 92 690 70 C812 46 890 64 1000 28";
+  const comparison = monitorComparisonData[monitorState.comparison];
+  const points = selected.id === "failure" ? comparison.trendPoints.failure : comparison.trendPoints.default;
   return `
     <article class="monitor-workflow-panel">
-      <div class="monitor-panel-title">业务分析-使用趋势</div>
+      <div class="monitor-panel-title">业务分析-使用趋势 · ${escapeHtml(monitorState.comparison)}</div>
       <div class="monitor-trend-chart">
         <div class="monitor-trend-grid" aria-hidden="true">${Array.from({ length: 5 }, () => "<span></span>").join("")}</div>
         <svg viewBox="0 0 1000 210" preserveAspectRatio="none" aria-hidden="true">
@@ -6742,15 +6789,16 @@ function renderWorkflowTrendPanel() {
           ${["07-01", "07-02", "07-03", "07-04", "07-05", "07-06", "07-07"].map((item) => `<span>${item}</span>`).join("")}
         </div>
       </div>
-      <div class="monitor-panel-note">${escapeHtml(selected.label)}按时间维度统计业务使用趋势，支持折线图展示。</div>
+      <div class="monitor-panel-note">${escapeHtml(selected.label)}按时间维度统计业务使用趋势，当前为${escapeHtml(comparison.trendNote)}分析。</div>
     </article>
   `;
 }
 
 function renderWorkflowResourcePanel() {
-  const total = monitorWorkflowResources.reduce((sum, item) => sum + item.value, 0);
+  const resources = monitorComparisonData[monitorState.comparison].resources;
+  const total = resources.reduce((sum, item) => sum + item.value, 0);
   let current = 0;
-  const gradient = monitorWorkflowResources.map((item) => {
+  const gradient = resources.map((item) => {
     const from = current;
     current += item.value;
     return `${item.color} ${from}% ${current}%`;
@@ -6763,7 +6811,7 @@ function renderWorkflowResourcePanel() {
           <span><strong>${total}%</strong><em>资源</em></span>
         </div>
         <div class="monitor-resource-list">
-          ${monitorWorkflowResources.map((item) => `
+          ${resources.map((item) => `
             <div>
               <span><i style="background:${item.color}"></i>${escapeHtml(item.label)}</span>
               <strong>${item.value}%</strong>
@@ -6792,15 +6840,16 @@ function renderWorkflowCreatorCard(group) {
 }
 
 function renderWorkflowUserRanking() {
+  const users = monitorComparisonData[monitorState.comparison].users;
   return `
     <article class="monitor-workflow-panel">
-      <div class="monitor-panel-title">业务分析-用户排行</div>
+      <div class="monitor-panel-title">业务分析-用户排行 · ${escapeHtml(monitorState.comparison)}</div>
       <div class="monitor-user-rank-list">
-        ${monitorWorkflowUsers.map((item, index) => `
+        ${users.map((item, index) => `
           <div>
             <span class="monitor-rank ${index < 3 ? "hot" : ""}">TOP${index + 1}</span>
             <strong>${escapeHtml(item.name)}</strong>
-            <div><i style="width:${Math.round((item.value / monitorWorkflowUsers[0].value) * 100)}%"></i></div>
+            <div><i style="width:${Math.round((item.value / users[0].value) * 100)}%"></i></div>
             <em>${item.value}</em>
           </div>
         `).join("")}
@@ -6810,13 +6859,14 @@ function renderWorkflowUserRanking() {
 }
 
 function renderWorkflowCostPanel() {
+  const costs = monitorComparisonData[monitorState.comparison].costs;
   return `
     <article class="monitor-workflow-panel">
-      <div class="monitor-panel-title">运营决策-成本分析</div>
+      <div class="monitor-panel-title">运营决策-成本分析 · ${escapeHtml(monitorState.comparison)}</div>
       <div class="monitor-cost-grid">
-        <div><span>API调用成本</span><strong>8,642</strong><em>元</em></div>
-        <div><span>Token消耗成本</span><strong>4,218</strong><em>元</em></div>
-        <div><span>资源管控建议</span><strong>3</strong><em>条</em></div>
+        <div><span>API调用成本</span><strong>${costs[0]}</strong><em>元</em></div>
+        <div><span>Token消耗成本</span><strong>${costs[1]}</strong><em>元</em></div>
+        <div><span>资源管控建议</span><strong>${costs[2]}</strong><em>条</em></div>
       </div>
       <div class="monitor-cost-note">汇总运行数据为资源管控提供依据，支持按模块、用户、时间维度分析 API 调用成本。</div>
     </article>
@@ -6941,9 +6991,13 @@ function renderMonitorTopPanel(title) {
 
 function renderMonitorTokenChart() {
   const labels = ["2026-07-01 00", "2026-07-01 02", "2026-07-01 04", "2026-07-01 06", "2026-07-01 08", "2026-07-01 10", "2026-07-01 12", "2026-07-01 14"];
+  const tokenTotal = monitorComparisonData[monitorState.comparison].tokenTotal;
+  const tokenPath = monitorState.comparison === "同比"
+    ? "M0 208 C120 184 240 190 360 154 C480 116 610 138 720 96 C830 68 910 84 1000 52"
+    : "M0 150 C135 168 250 136 360 146 C510 170 620 96 740 122 C855 144 925 94 1000 106";
   return `
     <article class="monitor-token-panel">
-      <div class="monitor-token-summary"><span>总计消耗</span><strong><i></i>0 Token</strong></div>
+      <div class="monitor-token-summary"><span>总计消耗 · ${escapeHtml(monitorState.comparison)}</span><strong><i></i>${escapeHtml(tokenTotal)}</strong></div>
       <div class="monitor-token-chart">
         <div class="monitor-y-axis">
           ${["1", "0.8", "0.6", "0.4", "0.2", "0"].map((item) => `<span>${item}</span>`).join("")}
@@ -6951,7 +7005,7 @@ function renderMonitorTokenChart() {
         <div class="monitor-plot">
           <div class="monitor-grid-lines" aria-hidden="true">${Array.from({ length: 6 }, () => "<span></span>").join("")}</div>
           <svg class="monitor-line-svg" viewBox="0 0 1000 230" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 228H1000" />
+            <path d="${tokenPath}" />
           </svg>
           <div class="monitor-x-axis">
             ${labels.map((item) => `<span>${item}</span>`).join("")}
