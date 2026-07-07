@@ -149,6 +149,39 @@ const agentMineData = [
   { id: "agent-m-11", name: "经营指标解释助手", type: "RAG", desc: "经营指标口径解释与数据来源查询。", owner: "admin", department: "经营计划部", createdAt: "2026-02-18 11:20:16" },
 ];
 
+const agentEditorProfiles = {
+  "agent-m-1": {
+    model: "DeepSeek-R1",
+    temperature: "0.2",
+    opening: "您好，我是个税计算专家。可以根据税前收入、专项附加扣除、社保公积金等信息，帮您测算个税和到手收入。",
+    prompt: "你是企业财税场景下的个税计算专家。回答时先确认收入周期、税前收入、社保公积金、专项附加扣除，再按税率表分步计算，并提示结果仅供业务测算。",
+    knowledge: ["个人所得税税率表", "专项附加扣除规则", "工资薪金计算口径"],
+    tools: ["个税速算扣除数查询", "薪资到手测算器"],
+    questions: ["月薪 25000 元如何计算个税？", "年终奖单独计税和并入综合所得有什么差异？", "专项附加扣除怎么影响到手收入？"],
+    preview: ["已识别收入类型：工资薪金", "已匹配税率档位：20%", "预计应纳税额：2,190.00 元"],
+  },
+  "agent-m-2": {
+    model: "Qwen-Max",
+    temperature: "0.6",
+    opening: "我是短线冲浪手，可以围绕市场情绪、成交量、资金流和技术形态，辅助梳理短线交易观察点。",
+    prompt: "你是短线行情分析助手。输出必须区分事实数据、技术观察和风险提示，不提供确定性买卖承诺，重点关注趋势、量能、波动率和资金行为。",
+    knowledge: ["短线技术指标说明", "资金流向解读口径", "交易风险提示模板"],
+    tools: ["行情摘要生成", "K线形态识别", "风险等级评估"],
+    questions: ["今天哪些信号说明短线情绪偏强？", "放量上涨后应该关注哪些风险？", "帮我生成一份短线观察清单。"],
+    preview: ["市场情绪：偏强", "量能变化：较前周期放大 18%", "风险提示：追高波动风险较高"],
+  },
+  "agent-m-3": {
+    model: "GLM-4-Plus",
+    temperature: "0.3",
+    opening: "我是数据分析团队，可以拆解数据需求、协调统计分析、生成结论摘要和可视化建议。",
+    prompt: "你是多智能体数据分析协调者。先拆解业务目标，再分派数据清洗、指标计算、异常识别和结论撰写任务，最终输出结构化分析报告。",
+    knowledge: ["经营分析指标库", "数据质量校验规则", "可视化图表选择指南"],
+    tools: ["SQL自定义查询", "表格统计分析", "图表建议生成"],
+    questions: ["帮我分析近 30 天业务使用趋势。", "这份表格有哪些异常值？", "生成一份部门指标对比分析。"],
+    preview: ["已拆解任务：4 个子步骤", "已建议图表：折线图、柱状图", "输出格式：摘要 + 指标表 + 风险点"],
+  },
+};
+
 function getAgentPage(tab = agentState.tab) {
   return agentState.pageByTab?.[tab] || 1;
 }
@@ -370,26 +403,95 @@ function renderAgentModal() {
   }
   const item = [...agentCenterData, ...agentMineData].find((entry) => entry.id === agentState.activeId);
   const isCreate = agentState.modal === "create";
+  const profile = agentEditorProfiles[item?.id] || {
+    model: item?.type === "RAG" ? "Qwen-Long" : "DeepSeek-V3",
+    temperature: "0.4",
+    opening: `您好，我是${item?.name || "智能体"}，可以围绕当前业务场景提供问答、检索和任务处理支持。`,
+    prompt: "请根据用户输入识别业务目标，必要时追问缺失信息，并以结构化方式输出结论、依据和下一步建议。",
+    knowledge: ["企业制度知识库", "业务流程文档", "历史问答记录"],
+    tools: ["知识库检索", "联网信息摘要", "结果格式化"],
+    questions: ["请介绍一下你的能力。", "帮我梳理这个问题的处理步骤。", "请输出一份结构化结论。"],
+    preview: ["已识别业务意图", "已检索关联资料", "可生成结构化回复"],
+  };
+  const readonly = agentState.modal === "view" ? "readonly" : "";
   modal.className = "agent-modal-backdrop";
   modal.innerHTML = `
-    <div class="agent-modal">
+    <div class="agent-modal agent-editor-modal">
       <div class="agent-modal-head">
-        <h3>${isCreate ? "新增智能体" : agentState.modal === "view" ? "查看智能体" : "编辑智能体"}</h3>
+        <div>
+          <h3>${isCreate ? "新增智能体" : agentState.modal === "view" ? "查看智能体" : "编辑智能体"}</h3>
+          <span>${escapeHtml(isCreate ? "配置智能体基础信息、能力和发布方式" : item?.name || "")}</span>
+        </div>
         <button data-agent-action="close-modal" aria-label="关闭">×</button>
       </div>
       <div class="agent-modal-body">
-        <div class="agent-form-grid">
-          <label>智能体名称<input type="text" data-agent-form="name" value="${escapeHtml(isCreate ? "新建智能体" : item?.name || "")}" ${agentState.modal === "view" ? "readonly" : ""} /></label>
-          <label>智能体类型<input type="text" data-agent-form="type" value="${escapeHtml(isCreate ? "自主规划" : item?.type || "")}" ${agentState.modal === "view" ? "readonly" : ""} /></label>
-          <label>所属部门<input type="text" data-agent-form="department" value="${escapeHtml(isCreate ? "研发部门" : item?.department || "")}" ${agentState.modal === "view" ? "readonly" : ""} /></label>
-          <label>创建人<input type="text" data-agent-form="owner" value="${escapeHtml(isCreate ? "admin" : item?.owner || "")}" ${agentState.modal === "view" ? "readonly" : ""} /></label>
-          <label class="full">简介<textarea rows="4" data-agent-form="desc" ${agentState.modal === "view" ? "readonly" : ""}>${escapeHtml(isCreate ? "" : item?.desc || "")}</textarea></label>
+        <div class="agent-editor-layout">
+          <section class="agent-editor-section">
+            <div class="agent-editor-section-head"><strong>基础信息</strong><span>面向应用广场和外链展示</span></div>
+            <div class="agent-form-grid">
+              <label>智能体名称<input type="text" data-agent-form="name" value="${escapeHtml(isCreate ? "新建智能体" : item?.name || "")}" ${readonly} /></label>
+              <label>智能体类型<input type="text" data-agent-form="type" value="${escapeHtml(isCreate ? "自主规划" : item?.type || "")}" ${readonly} /></label>
+              <label>所属部门<input type="text" data-agent-form="department" value="${escapeHtml(isCreate ? "研发部门" : item?.department || "")}" ${readonly} /></label>
+              <label>创建人<input type="text" data-agent-form="owner" value="${escapeHtml(isCreate ? "admin" : item?.owner || "")}" ${readonly} /></label>
+              <label class="full">简介<textarea rows="3" data-agent-form="desc" ${readonly}>${escapeHtml(isCreate ? "" : item?.desc || "")}</textarea></label>
+            </div>
+          </section>
+
+          <section class="agent-editor-section">
+            <div class="agent-editor-section-head"><strong>能力配置</strong><span>模型、提示词和响应策略</span></div>
+            <div class="agent-config-grid">
+              <label>模型<input value="${escapeHtml(profile.model)}" ${readonly} /></label>
+              <label>温度<input value="${escapeHtml(profile.temperature)}" ${readonly} /></label>
+              <label>最大上下文<input value="32K Tokens" ${readonly} /></label>
+              <label>回复格式<input value="结构化输出" ${readonly} /></label>
+            </div>
+            <label class="agent-editor-textarea">系统提示词<textarea rows="5" ${readonly}>${escapeHtml(profile.prompt)}</textarea></label>
+            <label class="agent-editor-textarea">开场白<textarea rows="3" ${readonly}>${escapeHtml(profile.opening)}</textarea></label>
+          </section>
+
+          <section class="agent-editor-section">
+            <div class="agent-editor-section-head"><strong>知识库与工具</strong><span>支持检索增强和工具调用</span></div>
+            <div class="agent-editor-two-col">
+              ${renderAgentEditorList("已绑定知识库", profile.knowledge)}
+              ${renderAgentEditorList("已启用工具", profile.tools)}
+            </div>
+          </section>
+
+          <section class="agent-editor-section">
+            <div class="agent-editor-section-head"><strong>推荐问题</strong><span>用户进入会话后的快捷入口</span></div>
+            <div class="agent-question-list">
+              ${profile.questions.map((question) => `<label><input value="${escapeHtml(question)}" ${readonly} /></label>`).join("")}
+            </div>
+          </section>
+
+          <aside class="agent-editor-preview">
+            <div class="agent-editor-section-head"><strong>调试预览</strong><span>模拟首轮响应</span></div>
+            <div class="agent-preview-chat">
+              <p>${escapeHtml(profile.opening)}</p>
+              <div>${profile.preview.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
+            </div>
+            <div class="agent-publish-box">
+              <strong>发布配置</strong>
+              <span>可见范围：研发部门</span>
+              <span>外链状态：未发布</span>
+              <span>应用广场：待上架</span>
+            </div>
+          </aside>
         </div>
       </div>
       <div class="agent-modal-foot">
         <button data-agent-action="close-modal">${agentState.modal === "view" ? "关闭" : "取消"}</button>
         ${agentState.modal === "view" ? "" : `<button class="primary" data-agent-action="confirm-modal">确定</button>`}
       </div>
+    </div>
+  `;
+}
+
+function renderAgentEditorList(title, items) {
+  return `
+    <div class="agent-editor-list">
+      <h4>${escapeHtml(title)}</h4>
+      ${items.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
     </div>
   `;
 }
