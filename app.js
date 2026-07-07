@@ -493,48 +493,60 @@ function renderAgentModal() {
 }
 
 function renderCollaborativeAgentEditor(item, profile) {
+  const agentName = item?.name || "石油化工异常处置助手";
+  const ownerName = item?.owner || "巩娜";
+  const prompt = [
+    "你是石油化工异常处置助手。",
+    "你应该简洁明了，直截了当，切中要害。",
+    "除非用户要求详细说明，否则您必须简洁回答，不超过4行（不包括工具使用或代码生成）。",
+    "重要提示：在保持有用性、质量和准确性的同时，您应尽可能减少输出标记。仅针对手头的特定查询或任务，避免提供无关信息，除非这些信息对于完成请求至关重要。如果您能用1-3句话或一个简短的段落回答，请尽量这样做。",
+    "重要提示：除非用户要求，否则请勿在回答中添加不必要的引言或结语（如解释代码或总结操作）。",
+    "除非用户要求，否则不要添加额外的代码解释摘要。处理完文件后直接给出结果。",
+  ].join("\n");
   const subAgents = [
-    ["HRBP助手", "协助HR进行社保公积金计算，并提醒合同与薪酬风险。"],
-    ["社保公积金计算", "负责用户社保、公积金、缴费基数和比例测算。"],
-    ["个税计算专家", "负责个税、年终奖和到手收入计算。"],
+    ["HRBP助手", "你负责帮助企业HR进行社保公积金计算，并且提醒进行合同..."],
+    ["社保公积金计算", "你负责用户的社保公积金计算"],
+    ["个税计算专家", "你是专门负责个税计算"],
   ];
   return `
     <div class="agent-collab-editor">
       <header class="agent-collab-topbar">
         <div class="agent-collab-title">
-          <button data-agent-action="close-modal" aria-label="返回">‹</button>
-          <span class="agent-collab-avatar">AI</span>
-          <strong>${escapeHtml(item?.name || "多应用协同智能体")}</strong>
+          <button class="agent-collab-back" data-agent-action="close-modal" aria-label="返回">‹</button>
+          <span class="agent-collab-avatar">☻</span>
+          <strong>${escapeHtml(agentName)}</strong>
           <button class="agent-collab-pencil" type="button">✎</button>
           <em>专家团队</em>
         </div>
         <nav class="agent-collab-tabs" aria-label="编辑步骤">
-          <button class="active">配置</button>
-          <button>发布渠道</button>
-          <button>评测</button>
+          <button class="active">⌾ 配置</button>
+          <button>⌁ 发布渠道</button>
+          <button>▱ 评测</button>
         </nav>
         <div class="agent-collab-actions">
-          <button>↺</button>
-          <button class="primary" data-agent-action="confirm-modal">发布</button>
+          <button class="agent-collab-icon-btn" aria-label="历史记录">↺</button>
+          <button class="primary" data-agent-action="confirm-modal">✈ 发布</button>
         </div>
       </header>
       <div class="agent-collab-main">
         <aside class="agent-collab-config">
           <div class="agent-collab-panel-title">智能体配置</div>
-          <section class="agent-collab-block">
-            <div class="agent-collab-label"><strong>参考上下文轮数</strong><span>?</span></div>
-            <div class="agent-collab-slider"><i><b></b></i><input value="2" readonly /></div>
+          <section class="agent-collab-card">
+            <div class="agent-collab-block">
+              <div class="agent-collab-label"><strong>参考上下文轮数</strong><span>?</span></div>
+              <div class="agent-collab-slider"><i><b></b></i><input value="2" readonly /></div>
+            </div>
+            <div class="agent-collab-block">
+              <div class="agent-collab-label"><strong>提示词</strong><button type="button">▣ 示例</button></div>
+              <textarea rows="9">${escapeHtml(prompt)}</textarea>
+            </div>
           </section>
           <section class="agent-collab-block">
-            <div class="agent-collab-label"><strong>提示词</strong><button type="button">示例</button></div>
-            <textarea rows="10">${escapeHtml(profile.prompt)}</textarea>
-          </section>
-          <section class="agent-collab-block">
-            <div class="agent-collab-label"><strong>子Agent</strong><span>?</span><button type="button">+ 添加 (3/10)</button></div>
+            <div class="agent-collab-label agent-collab-subhead"><strong>子Agent</strong><span>?</span><button type="button">+添加 (3/10)</button></div>
             <div class="agent-subagent-list">
               ${subAgents.map(([name, desc]) => `
                 <article>
-                  <span class="agent-subagent-icon">AI</span>
+                  <span class="agent-subagent-icon">☻</span>
                   <div><strong>${escapeHtml(name)}</strong><p>${escapeHtml(desc)}</p></div>
                   <label class="agent-switch"><input type="checkbox" checked /><i></i></label>
                 </article>
@@ -544,26 +556,32 @@ function renderCollaborativeAgentEditor(item, profile) {
           <section class="agent-collab-row">
             <strong>文件上传</strong>
             <span>支持文档/图片</span>
+            <button class="agent-collab-mini-icon" type="button">⌾</button>
             <label class="agent-switch"><input type="checkbox" checked /><i></i></label>
           </section>
           <section class="agent-collab-row">
             <strong>交互体验</strong>
-            <span>推荐问题 / 开场白</span>
+            <button class="agent-collab-row-arrow" type="button">›</button>
             <button type="button">+</button>
           </section>
         </aside>
         <main class="agent-collab-preview">
-          <div class="agent-collab-panel-title">调试预览</div>
+          <div class="agent-collab-preview-head">
+            <div class="agent-collab-panel-title">调试预览</div>
+            <button class="agent-collab-icon-btn" type="button" aria-label="清空预览">⌘</button>
+          </div>
           <div class="agent-collab-hero">
-            <h2>您好${escapeHtml(item?.owner || "巩娜")}，我可以帮你什么？</h2>
+            <h2>您好${escapeHtml(ownerName)}， 我可以帮你什么？</h2>
             <div class="agent-collab-chips">
-              <button>知识问答</button><button>深度写作</button><button>PPT创作</button>
+              <button><span class="blue">☁</span>知识问答</button>
+              <button><span class="green">▤</span>深度写作</button>
+              <button><span class="orange">▱</span>PPT创作</button>
             </div>
             <div class="agent-collab-input">
               <textarea placeholder="给我发送消息或布置任务"></textarea>
               <div>
                 <button>＋</button>
-                <span><i>AI</i>${escapeHtml(item?.name || "")}⌄</span>
+                <span><i>☻</i>${escapeHtml(agentName)}⌄</span>
                 <button class="send">↑</button>
               </div>
             </div>
