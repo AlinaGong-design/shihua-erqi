@@ -13163,6 +13163,54 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   padding: 18px;
 }
 
+.monitor-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #f0e8e8;
+  padding-bottom: 16px;
+}
+
+.monitor-page-head h1 {
+  margin: 0;
+  color: #242633;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.monitor-page-head p {
+  margin: 8px 0 0;
+  color: #777;
+  font-size: 13px;
+}
+
+.monitor-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.monitor-head-actions button,
+.monitor-link-action {
+  height: 34px;
+  border: 1px solid #ead6d6;
+  border-radius: 6px;
+  background: #fff;
+  color: #555;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.monitor-head-actions button.active,
+.monitor-link-action:hover {
+  border-color: var(--red);
+  background: #fff0f0;
+  color: var(--red);
+}
+
 .monitor-tabs {
   display: inline-flex;
   align-items: center;
@@ -13437,6 +13485,10 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   min-height: 318px;
   padding: 0 0 12px;
   overflow: hidden;
+}
+
+.monitor-chart-grid .monitor-token-panel {
+  min-height: 318px;
 }
 
 .monitor-panel-title {
@@ -14465,6 +14517,14 @@ body .workflow-card-title-row:has(h3:only-child) h3 {
   .monitor-section-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .monitor-page-head {
+    flex-direction: column;
+  }
+
+  .monitor-head-actions {
+    justify-content: flex-start;
   }
 
   .monitor-resource-layout,

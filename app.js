@@ -6472,7 +6472,6 @@ if (mcpPanel) {
 }
 
 const monitorState = {
-  tab: "overview",
   department: "",
   user: "",
   period: "today",
@@ -6599,13 +6598,18 @@ function renderMonitoringModule() {
   const root = document.querySelector("[data-monitor-root]");
   if (!root) return;
   const filterActive = Boolean(monitorState.department || monitorState.user || monitorState.startDate || monitorState.endDate || monitorState.period !== "today" || monitorState.customView !== "standard");
-  const tabContent = monitorState.tab === "workflow" ? renderWorkflowMonitoringContent() : renderMonitorOverviewContent();
   root.innerHTML = `
     <div class="monitor-card">
-      <div class="monitor-tabs">
-        <button class="${monitorState.tab === "overview" ? "active" : ""}" data-monitor-tab="overview">总览</button>
-        <button class="${monitorState.tab === "agent" ? "active" : ""}" data-monitor-tab="agent">智能体情况统计</button>
-        <button class="${monitorState.tab === "workflow" ? "active" : ""}" data-monitor-tab="workflow">工作流数据监控</button>
+      <div class="monitor-page-head">
+        <div>
+          <h1>数据监控</h1>
+          <p>核心指标、资源消耗、创建者调用和运营决策统一监控</p>
+        </div>
+        <div class="monitor-head-actions">
+          <button class="${monitorState.comparison === "同比" ? "active" : ""}" data-monitor-comparison="同比">同比</button>
+          <button class="${monitorState.comparison === "环比" ? "active" : ""}" data-monitor-comparison="环比">环比</button>
+          <button class="${monitorState.autoRefresh ? "active" : ""}" data-monitor-action="toggle-refresh">${monitorState.autoRefresh ? "实时刷新" : "暂停刷新"}</button>
+        </div>
       </div>
 
       <div class="monitor-filters">
@@ -6640,60 +6644,27 @@ function renderMonitoringModule() {
         <button class="monitor-export" data-monitor-action="export">${monitorState.exportMessage ? escapeHtml(monitorState.exportMessage) : "导出"}</button>
       </div>
 
-      ${tabContent}
+      ${renderUnifiedMonitoringContent()}
     </div>
   `;
 }
 
-function renderMonitorOverviewContent() {
-  return `
-    <section class="monitor-section">
-      <h2>${monitorState.tab === "overview" ? "资产总数统计" : "智能体情况统计"}</h2>
-      <div class="monitor-stat-grid">
-        ${monitorAssetStats.map(renderMonitorAssetCard).join("")}
-      </div>
-    </section>
-
-    <section class="monitor-chart-grid">
-      ${renderMonitorDonut(monitorCharts.tools)}
-      ${renderMonitorDonut(monitorCharts.departments)}
-    </section>
-
-    <section class="monitor-section">
-      <h2>使用量统计</h2>
-      <div class="monitor-usage-grid">
-        ${monitorUsageStats.map(renderMonitorUsageCard).join("")}
-      </div>
-    </section>
-
-    <section class="monitor-section">
-      <h2>使用次数top10</h2>
-      <div class="monitor-top-grid">
-        ${renderMonitorTopPanel("智能体")}
-        ${renderMonitorTopPanel("工作流")}
-      </div>
-    </section>
-
-    <section class="monitor-section">
-      <h2>消耗token数</h2>
-      ${renderMonitorTokenChart()}
-    </section>
-  `;
-}
-
-function renderWorkflowMonitoringContent() {
+function renderUnifiedMonitoringContent() {
   return `
     <section class="monitor-section">
       <div class="monitor-section-head">
         <h2>核心指标统计</h2>
-        <div class="monitor-inline-actions">
-          <button class="${monitorState.comparison === "同比" ? "active" : ""}" data-monitor-comparison="同比">同比</button>
-          <button class="${monitorState.comparison === "环比" ? "active" : ""}" data-monitor-comparison="环比">环比</button>
-          <button class="${monitorState.autoRefresh ? "active" : ""}" data-monitor-action="toggle-refresh">${monitorState.autoRefresh ? "实时刷新" : "暂停刷新"}</button>
-        </div>
+        <button class="monitor-link-action" data-monitor-action="export">汇总导出</button>
       </div>
       <div class="monitor-workflow-metric-grid">
         ${monitorWorkflowMetrics.map(renderWorkflowMetricCard).join("")}
+      </div>
+    </section>
+
+    <section class="monitor-section">
+      <h2>多维筛选视图</h2>
+      <div class="monitor-stat-grid">
+        ${monitorAssetStats.map(renderMonitorAssetCard).join("")}
       </div>
     </section>
 
@@ -6719,8 +6690,20 @@ function renderWorkflowMonitoringContent() {
         <h2>监控面板</h2>
         <div class="monitor-inline-actions">
           <button class="active">仪表盘</button>
+          <button data-monitor-action="drill">数据钻取</button>
           <button data-monitor-action="export">导出报表</button>
         </div>
+      </div>
+      <div class="monitor-chart-grid">
+        ${renderMonitorDonut(monitorCharts.departments)}
+        ${renderMonitorTokenChart()}
+      </div>
+    </section>
+
+    <section class="monitor-section">
+      <div class="monitor-section-head">
+        <h2>明细数据</h2>
+        <button class="monitor-link-action" data-monitor-action="export">Excel/CSV</button>
       </div>
       ${renderWorkflowDrillTable()}
     </section>
@@ -6995,11 +6978,6 @@ if (monitorPanel) {
   monitorPanel.addEventListener("click", (event) => {
     const target = event.target.closest("button");
     if (!target) return;
-    if (target.dataset.monitorTab) {
-      monitorState.tab = target.dataset.monitorTab;
-      renderMonitoringModule();
-      return;
-    }
     if (target.dataset.monitorAction === "reset") {
       resetMonitorFilters();
       renderMonitoringModule();
