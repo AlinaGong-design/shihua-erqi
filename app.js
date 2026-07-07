@@ -403,6 +403,7 @@ function renderAgentModal() {
   }
   const item = [...agentCenterData, ...agentMineData].find((entry) => entry.id === agentState.activeId);
   const isCreate = agentState.modal === "create";
+  const isCollaborativeEditor = agentState.modal === "edit" && item?.type === "多应用协同";
   const profile = agentEditorProfiles[item?.id] || {
     model: item?.type === "RAG" ? "Qwen-Long" : "DeepSeek-V3",
     temperature: "0.4",
@@ -415,6 +416,10 @@ function renderAgentModal() {
   };
   const readonly = agentState.modal === "view" ? "readonly" : "";
   modal.className = "agent-modal-backdrop";
+  if (isCollaborativeEditor) {
+    modal.innerHTML = renderCollaborativeAgentEditor(item, profile);
+    return;
+  }
   modal.innerHTML = `
     <div class="agent-modal agent-editor-modal">
       <div class="agent-modal-head">
@@ -482,6 +487,89 @@ function renderAgentModal() {
       <div class="agent-modal-foot">
         <button data-agent-action="close-modal">${agentState.modal === "view" ? "关闭" : "取消"}</button>
         ${agentState.modal === "view" ? "" : `<button class="primary" data-agent-action="confirm-modal">确定</button>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderCollaborativeAgentEditor(item, profile) {
+  const subAgents = [
+    ["HRBP助手", "协助HR进行社保公积金计算，并提醒合同与薪酬风险。"],
+    ["社保公积金计算", "负责用户社保、公积金、缴费基数和比例测算。"],
+    ["个税计算专家", "负责个税、年终奖和到手收入计算。"],
+  ];
+  return `
+    <div class="agent-collab-editor">
+      <header class="agent-collab-topbar">
+        <div class="agent-collab-title">
+          <button data-agent-action="close-modal" aria-label="返回">‹</button>
+          <span class="agent-collab-avatar">AI</span>
+          <strong>${escapeHtml(item?.name || "多应用协同智能体")}</strong>
+          <button class="agent-collab-pencil" type="button">✎</button>
+          <em>专家团队</em>
+        </div>
+        <nav class="agent-collab-tabs" aria-label="编辑步骤">
+          <button class="active">配置</button>
+          <button>发布渠道</button>
+          <button>评测</button>
+        </nav>
+        <div class="agent-collab-actions">
+          <button>↺</button>
+          <button class="primary" data-agent-action="confirm-modal">发布</button>
+        </div>
+      </header>
+      <div class="agent-collab-main">
+        <aside class="agent-collab-config">
+          <div class="agent-collab-panel-title">智能体配置</div>
+          <section class="agent-collab-block">
+            <div class="agent-collab-label"><strong>参考上下文轮数</strong><span>?</span></div>
+            <div class="agent-collab-slider"><i><b></b></i><input value="2" readonly /></div>
+          </section>
+          <section class="agent-collab-block">
+            <div class="agent-collab-label"><strong>提示词</strong><button type="button">示例</button></div>
+            <textarea rows="10">${escapeHtml(profile.prompt)}</textarea>
+          </section>
+          <section class="agent-collab-block">
+            <div class="agent-collab-label"><strong>子Agent</strong><span>?</span><button type="button">+ 添加 (3/10)</button></div>
+            <div class="agent-subagent-list">
+              ${subAgents.map(([name, desc]) => `
+                <article>
+                  <span class="agent-subagent-icon">AI</span>
+                  <div><strong>${escapeHtml(name)}</strong><p>${escapeHtml(desc)}</p></div>
+                  <label class="agent-switch"><input type="checkbox" checked /><i></i></label>
+                </article>
+              `).join("")}
+            </div>
+          </section>
+          <section class="agent-collab-row">
+            <strong>文件上传</strong>
+            <span>支持文档/图片</span>
+            <label class="agent-switch"><input type="checkbox" checked /><i></i></label>
+          </section>
+          <section class="agent-collab-row">
+            <strong>交互体验</strong>
+            <span>推荐问题 / 开场白</span>
+            <button type="button">+</button>
+          </section>
+        </aside>
+        <main class="agent-collab-preview">
+          <div class="agent-collab-panel-title">调试预览</div>
+          <div class="agent-collab-hero">
+            <h2>您好${escapeHtml(item?.owner || "巩娜")}，我可以帮你什么？</h2>
+            <div class="agent-collab-chips">
+              <button>知识问答</button><button>深度写作</button><button>PPT创作</button>
+            </div>
+            <div class="agent-collab-input">
+              <textarea placeholder="给我发送消息或布置任务"></textarea>
+              <div>
+                <button>＋</button>
+                <span><i>AI</i>${escapeHtml(item?.name || "")}⌄</span>
+                <button class="send">↑</button>
+              </div>
+            </div>
+            <p>以上内容为AI生成，不代表开发者立场</p>
+          </div>
+        </main>
       </div>
     </div>
   `;
